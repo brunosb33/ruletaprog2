@@ -151,6 +151,34 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
 .rank li{display:flex;justify-content:space-between;gap:12px;padding:.55em 1em;border-radius:12px;background:var(--bg2);font-weight:700;font-size:1.1rem}
 .rank li span:last-child{font-family:var(--display);font-weight:400;font-variant-numeric:tabular-nums}
 .layer-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.revancha{width:100%;max-width:620px;display:grid;gap:10px;padding:18px 20px;border-radius:18px;background:var(--bg2);border:2px dashed var(--line);animation:pop .6s .9s both}
+.revancha .rt{font-family:var(--display);font-size:1.4rem;color:var(--accent);margin:0}
+.revancha .rn{font-weight:800;font-size:1.15rem;margin:0}
+.revancha .rm{margin:0;font-size:1.1rem;color:var(--fg);text-wrap:balance}
+.revancha code{font-family:var(--mono);font-size:.95em;background:var(--code);padding:.1em .4em;border-radius:6px}
+.badges{display:flex;gap:6px;flex-wrap:wrap}
+.badge{font-weight:800;font-size:.85rem;padding:.35em .7em;border-radius:8px;background:var(--accent);color:#1a1400}
+.opt.gone{opacity:.18;border-style:dashed}
+.opt.gone .t{visibility:hidden}
+#cardView{display:grid;justify-items:center;gap:18px;width:100%}
+.flip{width:min(600px,100%);aspect-ratio:3/2;perspective:1400px}
+.flip-in{position:relative;width:100%;height:100%;transition:transform .9s cubic-bezier(.3,1.35,.5,1);transform-style:preserve-3d}
+.flip.open .flip-in{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:24px;display:grid;place-items:center;padding:24px;text-align:center}
+.face.front{background:var(--kc);color:#141a33;font-family:var(--display);font-size:clamp(4rem,12vw,7rem);box-shadow:inset 0 0 0 10px rgba(0,0,0,.12),0 18px 40px rgba(0,0,0,.45)}
+.face.back{transform:rotateY(180deg);background:var(--bg2);border:5px solid var(--kc);align-content:center;gap:12px;box-shadow:0 18px 40px rgba(0,0,0,.45);overflow:auto}
+.card-kind{font-size:.85rem;letter-spacing:.16em;text-transform:uppercase;font-weight:800;color:var(--kc);margin:0}
+.card-title{font-family:var(--display);font-size:clamp(1.6rem,4.2vw,2.7rem);margin:0;line-height:1.05;text-wrap:balance}
+.card-desc{font-size:clamp(1.1rem,2.5vw,1.55rem);margin:0;text-wrap:balance;max-width:34ch}
+@media (max-width:560px){.flip{aspect-ratio:auto;height:360px}}
+.jokers{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap}
+.jokers .jl{color:var(--muted);font-weight:700}
+.jokers .jl b{color:var(--tc)}
+.joker{width:72px;height:98px;border-radius:12px;background:repeating-linear-gradient(45deg,var(--panel) 0 8px,var(--line) 8px 16px);border:3px solid var(--accent);font-family:var(--display);font-size:2rem;color:var(--accent);display:grid;place-items:center;transition:transform .15s;box-shadow:0 6px 14px rgba(0,0,0,.35)}
+.joker.live:hover{transform:translateY(-5px) rotate(-3deg)}
+.joker:not(.live){cursor:default;opacity:.45}
+.joker.used{background:var(--bg2);border-color:var(--line);font-family:var(--body);font-size:.72rem;font-weight:700;color:var(--muted);padding:6px;text-align:center;line-height:1.2;opacity:.6}
+#jokerLayer .flip{--kc:var(--accent)}
 #confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:30}
 
 /* Banco */
@@ -176,7 +204,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
     <div class="setup-card">
       <div>
         <h1 class="brand">Ruleta de <span>Programación&nbsp;2</span></h1>
-        <p class="lead">Cada equipo gira la ruleta, sale un tema y una pregunta al azar. Tienen tiempo limitado para contestar; si fallan o se acaba el tiempo, rebota a otro equipo. Los puntajes se muestran solo en algunos momentos.</p>
+        <p class="lead">Cada equipo gira la ruleta. Puede salir un tema de programación, cultura general, un premio o una prenda, todos con la misma probabilidad. Cada equipo tiene además 2 comodines boca abajo para usar cuando le toca contestar. Tienen tiempo limitado para contestar; si fallan o se acaba el tiempo, rebota a otro equipo. Los puntajes se muestran solo en algunos momentos.</p>
       </div>
       <div class="cols">
         <div class="box">
@@ -235,10 +263,18 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
         <div class="topic-banner" id="topicBanner"></div>
         <button class="btn primary big" type="button" id="spinBtn">Girar la ruleta</button>
       </div>
+      <div id="cardView" hidden>
+        <div class="turn" id="cardWho"></div>
+        <div class="flip" id="flip"><div class="flip-in">
+          <div class="face front" id="cardFront">?</div>
+          <div class="face back"><p class="card-kind" id="cardKind"></p><p class="card-title" id="cardTitle"></p><p class="card-desc" id="cardDesc"></p></div>
+        </div></div>
+        <div class="ctrl" id="cardCtrl"></div>
+      </div>
       <div id="qView" hidden>
         <div class="q-head">
           <div>
-            <div class="q-meta"><span class="tag" id="qTag"></span><span class="who" id="qWho"></span></div>
+            <div class="q-meta"><span class="tag" id="qTag"></span><span class="who" id="qWho"></span><span class="badges" id="qBadges"></span></div>
             <p class="q-text" id="qText"></p>
           </div>
           <div class="timer" id="timer">
@@ -249,7 +285,8 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
         <pre class="code" id="qCode" hidden></pre>
         <div class="opts" id="opts"></div>
         <div class="ctrl" id="ctrl"></div>
-        <p class="keys"><kbd>A</kbd>–<kbd>D</kbd> elegir opción · <kbd>Espacio</kbd> acción principal · <kbd>P</kbd> pausa</p>
+        <div class="jokers" id="jokers"></div>
+        <p class="keys"><kbd>A</kbd>–<kbd>D</kbd> elegir opción · <kbd>Espacio</kbd> acción principal · <kbd>P</kbd> pausa · <kbd>J</kbd> comodín</p>
       </div>
     </div>
   </section>
@@ -262,6 +299,18 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
     <h2 id="scoresTitle">Así van los puntajes</h2>
     <div class="board" id="board"></div>
     <button class="btn primary big" type="button" id="scoresGo">Seguir jugando</button>
+  </div>
+</div>
+
+<!-- Comodín -->
+<div class="layer" id="jokerLayer" hidden>
+  <div class="layer-card">
+    <p class="sub" id="jWho"></p>
+    <div class="flip" id="jFlip"><div class="flip-in">
+      <div class="face front">?</div>
+      <div class="face back"><p class="card-kind">Comodín</p><p class="card-title" id="jTitle"></p><p class="card-desc" id="jDesc"></p></div>
+    </div></div>
+    <button class="btn primary big" type="button" id="jGo" hidden>Seguir con la pregunta</button>
   </div>
 </div>
 
@@ -285,7 +334,37 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
 const TOPICS=[
   {n:"Variables",c:"#ff6b6b"},{n:"if / else",c:"#ff9f43"},{n:"while",c:"#ffc933"},{n:"for",c:"#9bd65a"},
   {n:"Arrays",c:"#2ec4b6"},{n:"Métodos",c:"#4cb5ff"},{n:"Clases",c:"#8a96ff"},{n:"Objetos",c:"#b18cff"},
-  {n:"Encapsulamiento",c:"#ea7fd6"},{n:"Getters y setters",c:"#ff8fb1"}
+  {n:"Encapsulamiento",c:"#ea7fd6"},{n:"Getters y setters",c:"#ff8fb1"},
+  {n:"Cultura general",c:"#7ee0b0"}
+];
+// Casilleros especiales de la ruleta
+const SPECIAL={
+  premio:{n:"★ Premio",c:"#fff1c2",tc:"#8a5d00",kc:"#ffc933"},
+  prenda:{n:"Prenda",c:"#2c2154",tc:"#ff8fb1",kc:"#ff8fb1"}
+};
+// Orden de los 13 casilleros (todos con la misma probabilidad)
+const WHEEL=[0,1,2,"premio",3,4,5,10,6,7,"prenda",8,9];
+const PREMIOS=[
+  {t:"¡Puntos de regalo!",d:"Suman 10 puntos sin contestar nada.",fx:"pts",n:10},
+  {t:"Puntitos extra",d:"Suman 5 puntos de regalo.",fx:"pts",n:5},
+  {t:"Doble o nada",d:"Su próxima pregunta vale el doble de puntos.",fx:"double"},
+  {t:"Comodín 50/50",d:"En su próxima pregunta se eliminan dos opciones incorrectas.",fx:"fifty"},
+  {t:"Tiempo extra",d:"En su próxima pregunta tienen 10 segundos más para contestar.",fx:"extra"},
+  {t:"¡Robo!",d:"Elijan un equipo: le sacan 5 puntos y se los quedan.",fx:"steal"}
+];
+const PRENDAS=[
+  "Un integrante explica qué es un bucle como si fuera un relator de fútbol.",
+  "El equipo nombra 5 lenguajes de programación sin repetir y sin trabarse.",
+  "Un integrante dibuja en el pizarrón algo relacionado con la programación y la clase tiene que adivinar qué es.",
+  "Un integrante imita a un robot diciendo \"Hola, mundo\" durante 10 segundos.",
+  "Un integrante dice tres veces seguidas y rápido: \"Tres tristes tigres tragaban trigo en un trigal\".",
+  "Un integrante hace de compilador y anuncia con voz dramática: \"¡Error en la línea 42!\".",
+  "Un integrante explica qué es un objeto usando algo que haya en el salón como ejemplo.",
+  "El equipo cuenta en binario del 0 al 7 en voz alta, aplaudiendo en cada número.",
+  "Un integrante hace la mímica de un bucle infinito y la clase tiene que adivinar qué es.",
+  "El equipo le dedica un cumplido en código a otro equipo, por ejemplo: equipoB.setOnda(\"excelente\");",
+  "Un integrante deletrea \"encapsulamiento\" de atrás para adelante.",
+  "Todo el equipo se para y hace la ola frente a la clase."
 ];
 // [tema, pregunta, código, [correcta, incorrecta, incorrecta, incorrecta]]
 const Q=[
@@ -397,7 +476,38 @@ const Q=[
 [9,"¿Qué pasa si se llama setEdad(-5)?","public void setEdad(int e) {\n  if (e >= 0) {\n    edad = e;\n  }\n}",["La edad no cambia","La edad pasa a ser -5","La edad pasa a ser 0","Da error de compilación"]],
 [9,"En un setter, ¿qué hace esta línea?","this.nombre = nombre;",["Guarda el parámetro en el atributo del objeto","Compara el atributo con el parámetro","Crea un objeto nuevo","Devuelve el nombre"]],
 [9,"¿Un getter normalmente recibe parámetros?","",["No","Sí, siempre uno","Sí, dos","Solo si es void"]],
-[9,"¿Qué se muestra en pantalla?","p.setPrecio(200);\nSystem.out.println(p.getPrecio());",["200","0","null","p"]]
+[9,"¿Qué se muestra en pantalla?","p.setPrecio(200);\nSystem.out.println(p.getPrecio());",["200","0","null","p"]],
+
+[10,"¿Cuál es la capital de Uruguay?","",["Montevideo","Salto","Paysandú","Colonia del Sacramento"]],
+[10,"¿Cuántos departamentos tiene Uruguay?","",["19","18","20","21"]],
+[10,"¿En qué departamento está Bella Unión?","",["Artigas","Salto","Rivera","Tacuarembó"]],
+[10,"¿Con qué países limita Uruguay?","",["Argentina y Brasil","Argentina y Paraguay","Brasil y Paraguay","Solo con Argentina"]],
+[10,"¿En qué año se jugó el primer Mundial de fútbol, en Uruguay?","",["1930","1950","1924","1928"]],
+[10,"¿Quién es considerado el prócer de Uruguay?","",["José Gervasio Artigas","José de San Martín","Simón Bolívar","Juan Antonio Lavalleja"]],
+[10,"¿Qué plan uruguayo le da una computadora a cada estudiante?","",["Plan Ceibal","Plan Juntos","Plan Artigas","Plan Colibrí"]],
+[10,"¿Qué cultivo es típico de la zona de Bella Unión?","",["La caña de azúcar","El café","El cacao","El té"]],
+[10,"¿En qué departamento están las termas del Daymán?","",["Salto","Artigas","Paysandú","Rivera"]],
+[10,"¿Quién escribió \"Cuentos de la selva\"?","",["Horacio Quiroga","Mario Benedetti","Juana de Ibarbourou","Eduardo Galeano"]],
+[10,"¿Cuál es el planeta más grande del sistema solar?","",["Júpiter","Saturno","La Tierra","Neptuno"]],
+[10,"¿Qué planeta es conocido como el planeta rojo?","",["Marte","Venus","Mercurio","Júpiter"]],
+[10,"¿Cuál es el océano más grande del mundo?","",["Pacífico","Atlántico","Índico","Ártico"]],
+[10,"¿Cuál es la capital de Brasil?","",["Brasilia","Río de Janeiro","San Pablo","Porto Alegre"]],
+[10,"¿Qué país tiene forma de bota?","",["Italia","España","Grecia","Portugal"]],
+[10,"¿Quién escribió \"Don Quijote de la Mancha\"?","",["Miguel de Cervantes","Gabriel García Márquez","William Shakespeare","Jorge Luis Borges"]],
+[10,"¿Quién pintó la Mona Lisa?","",["Leonardo da Vinci","Pablo Picasso","Vincent van Gogh","Miguel Ángel"]],
+[10,"¿En qué año llegó Cristóbal Colón a América?","",["1492","1500","1810","1392"]],
+[10,"¿Qué gas toman las plantas del aire para hacer la fotosíntesis?","",["Dióxido de carbono","Oxígeno","Nitrógeno","Helio"]],
+[10,"¿Cuál es la fórmula química del agua?","",["H₂O","CO₂","O₂","NaCl"]],
+[10,"¿Qué órgano bombea la sangre por el cuerpo?","",["El corazón","Los pulmones","El hígado","El cerebro"]],
+[10,"¿Cuál es el animal terrestre más rápido?","",["El guepardo","El león","El caballo","El ñandú"]],
+[10,"¿Qué metal es líquido a temperatura ambiente?","",["El mercurio","El hierro","El cobre","El aluminio"]],
+[10,"¿Cuántos lados tiene un hexágono?","",["6","5","7","8"]],
+[10,"¿Cuántos días tiene un año bisiesto?","",["366","365","364","360"]],
+[10,"¿Cuántos jugadores de cada equipo hay en la cancha en un partido de fútbol?","",["11","10","12","9"]],
+[10,"¿Cuántos bits tiene un byte?","",["8","4","16","10"]],
+[10,"¿Qué significa CPU?","",["Unidad central de procesamiento","Computadora personal universal","Centro de programas útiles","Control de pantalla y usuario"]],
+[10,"¿Quién fundó Microsoft junto con Paul Allen?","",["Bill Gates","Steve Jobs","Mark Zuckerberg","Elon Musk"]],
+[10,"¿Quién formuló la teoría de la relatividad?","",["Albert Einstein","Isaac Newton","Galileo Galilei","Nikola Tesla"]]
 ];
 
 const TEAM_COLORS=["#ff6b6b","#2ec4b6","#ffc933","#b18cff","#9bd65a","#4cb5ff","#ff9f43","#ff8fb1"];
@@ -407,7 +517,11 @@ const LS_KEY="ruleta-p2-usadas";
 /* ================= UTILIDADES ================= */
 const $=s=>document.querySelector(s);
 const el=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e};
-const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+// Azar criptográfico: cada casillero tiene exactamente la misma probabilidad
+function rand(n){if(window.crypto&&crypto.getRandomValues){const lim=Math.floor(4294967296/n)*n,b=new Uint32Array(1);let x;do{crypto.getRandomValues(b);x=b[0]}while(x>=lim);return x%n}return Math.floor(Math.random()*n)}
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=rand(i+1);[a[i],a[j]]=[a[j],a[i]]}return a};
+const BAGS={premio:[],prenda:[]};
+function draw(kind){const src=kind==="premio"?PREMIOS:PRENDAS;if(!BAGS[kind].length)BAGS[kind]=shuffle(src.map((x,i)=>i));return src[BAGS[kind].pop()]}
 function loadUsed(){try{return new Set(JSON.parse(localStorage.getItem(LS_KEY)||"[]"))}catch(e){return new Set()}}
 function saveUsed(s){try{localStorage.setItem(LS_KEY,JSON.stringify([...s]))}catch(e){}}
 
@@ -445,7 +559,7 @@ function renderSetup(){
 }
 function updatePoolInfo(){
   const used=loadUsed();const left=Q.length-[...used].filter(i=>i<Q.length).length;
-  $("#poolInfo").textContent=$("#noRepeat").checked?`Quedan ${left} de ${Q.length} preguntas sin usar.`:`Se sortea entre las ${Q.length} preguntas.`;
+  $("#poolInfo").textContent=$("#noRepeat").checked?`Quedan ${left} de ${Q.length} preguntas sin usar (${Q.length-30} de programación y 30 de cultura general), más ${PREMIOS.length} premios y ${PRENDAS.length} prendas.`:`Se sortea entre las ${Q.length} preguntas.`;
 }
 document.querySelectorAll(".stepper").forEach(s=>{
   s.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const k=s.dataset.key;
@@ -457,7 +571,7 @@ $("#noRepeat").addEventListener("change",updatePoolInfo);
 $("#resetUsed").addEventListener("click",()=>{saveUsed(new Set());updatePoolInfo();$("#resetUsed").textContent="Banco reiniciado";setTimeout(()=>$("#resetUsed").textContent="Reiniciar banco",1800)});
 $("#bankBtn").addEventListener("click",openBank);
 $("#bankClose").addEventListener("click",()=>$("#bank").hidden=true);
-$("#startBtn").addEventListener("click",startGame);
+$("#startBtn").addEventListener("click",()=>startGame(false));
 
 function openBank(){
   const used=loadUsed();const list=$("#bankList");list.innerHTML="";
@@ -469,20 +583,25 @@ function openBank(){
       const a=el("div","ans","✓ "+q[3][0]);li.append(a);ol.append(li)});
     sec.append(h,ol);list.append(sec);
   });
+  [["Premios",SPECIAL.premio.kc,PREMIOS.map(p=>p.t+": "+p.d)],["Prendas",SPECIAL.prenda.kc,PRENDAS]].forEach(([n,c,items])=>{
+    const sec=el("div","bank-topic");const h=el("h3",null,n);h.style.color=c;const ol=el("ol");
+    items.forEach(t=>ol.append(el("li",null,t)));sec.append(h,ol);list.append(sec)});
   $("#bank").hidden=false;$("#bank").scrollTop=0;
 }
 
 /* ================= JUEGO ================= */
 let G=null;
-function startGame(){
+function startGame(rematch){
   actx();
+  const prevUsed=rematch===true&&G?new Set(G.used):null;
   const checks=$("#checks").value.split(/[^0-9]+/).map(Number).filter(n=>n>0&&n<cfg.q);
   G={
-    teams:cfg.names.slice(0,cfg.teams).map((n,i)=>({name:(n||"").trim()||"Equipo "+(i+1),color:TEAM_COLORS[i],score:0})),
+    teams:cfg.names.slice(0,cfg.teams).map((n,i)=>({name:(n||"").trim()||"Equipo "+(i+1),color:TEAM_COLORS[i],score:0,flags:{},jokers:shuffle(["web","robo"]).map(k=>({k,used:false}))})),
     active:[...Array(cfg.teams).keys()],turn:0,done:0,total:cfg.q,checks:new Set(checks),
     used:$("#noRepeat").checked?loadUsed():new Set(),persist:$("#noRepeat").checked,
     tiebreak:false,rot:G?G.rot:0,phase:"spin",cur:null,spinning:false
   };
+  if(prevUsed)prevUsed.forEach(id=>G.used.add(id));
   $("#setup").hidden=true;$("#game").hidden=false;
   toSpin();
 }
@@ -504,29 +623,31 @@ function drawWheel(){
   const cv=$("#wheel");const s=cv.clientWidth;if(!s)return;const dpr=window.devicePixelRatio||1;
   if(cv.width!==Math.round(s*dpr)){cv.width=cv.height=Math.round(s*dpr)}
   const c=cv.getContext("2d");c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,s,s);
-  const r=s/2,seg=Math.PI*2/TOPICS.length,rot=G.rot;
+  const r=s/2,seg=Math.PI*2/WHEEL.length,rot=G.rot;
   c.beginPath();c.arc(r,r,r-2,0,Math.PI*2);c.fillStyle="#f6f2e9";c.fill();
-  TOPICS.forEach((t,i)=>{
-    const avail=topicAvail(i);
+  WHEEL.forEach((id,i)=>{
+    const sp=typeof id==="string"?SPECIAL[id]:null,t=sp||TOPICS[id];
+    const avail=segAvail(i);
     c.beginPath();c.moveTo(r,r);c.arc(r,r,r-10,rot+i*seg,rot+(i+1)*seg);c.closePath();
     c.fillStyle=avail?t.c:"#4a5382";c.fill();c.lineWidth=3;c.strokeStyle="#111836";c.stroke();
     c.save();c.translate(r,r);c.rotate(rot+(i+.5)*seg);c.textAlign="right";c.textBaseline="middle";
-    c.fillStyle=avail?"#141a33":"#8d94bb";c.font=`800 ${Math.max(11,r*.068)}px Rubik, system-ui, sans-serif`;
-    c.fillText(t.n.toUpperCase(),r-24,0);c.restore();
+    c.fillStyle=avail?(sp?sp.tc:"#141a33"):"#8d94bb";c.font=`800 ${Math.max(10,r*(sp?.075:.062))}px Rubik, system-ui, sans-serif`;
+    c.fillText(t.n.toUpperCase(),r-22,0);c.restore();
   });
   // pernos
-  for(let i=0;i<TOPICS.length;i++){const a=rot+i*seg;c.beginPath();c.arc(r+Math.cos(a)*(r-6),r+Math.sin(a)*(r-6),3.5,0,Math.PI*2);c.fillStyle="#111836";c.fill()}
+  for(let i=0;i<WHEEL.length;i++){const a=rot+i*seg;c.beginPath();c.arc(r+Math.cos(a)*(r-6),r+Math.sin(a)*(r-6),3.5,0,Math.PI*2);c.fillStyle="#111836";c.fill()}
   c.beginPath();c.arc(r,r,r*.15,0,Math.PI*2);c.fillStyle="#111836";c.fill();
   c.beginPath();c.arc(r,r,r*.1,0,Math.PI*2);c.fillStyle="#ffc933";c.fill();
   c.fillStyle="#111836";c.font=`${r*.08}px Bungee, Impact, sans-serif`;c.textAlign="center";c.textBaseline="middle";c.fillText("P2",r,r+1);
 }
 window.addEventListener("resize",()=>{if(G&&!$("#wheelView").hidden)drawWheel()});
-function underPointer(rot){const seg=Math.PI*2/TOPICS.length;let a=(-Math.PI/2-rot)%(Math.PI*2);if(a<0)a+=Math.PI*2;return Math.floor(a/seg)}
+function segAvail(i){const id=WHEEL[i];return typeof id==="string"?!G.tiebreak:topicAvail(id)}
+function underPointer(rot){const seg=Math.PI*2/WHEEL.length;let a=(-Math.PI/2-rot)%(Math.PI*2);if(a<0)a+=Math.PI*2;return Math.floor(a/seg)}
 
 function toSpin(){
   G.phase="spin";G.cur=null;
   if(!TOPICS.some((t,i)=>topicAvail(i))){G.used=new Set();if(G.persist)saveUsed(G.used)}
-  $("#qView").hidden=true;$("#wheelView").hidden=false;
+  $("#qView").hidden=true;$("#cardView").hidden=true;$("#wheelView").hidden=false;
   const t=curTeam();const tl=$("#turnLabel");tl.style.setProperty("--tc",t.color);
   tl.innerHTML="";tl.append(document.createTextNode(G.tiebreak?"Desempate · gira":"Gira la ruleta"));const b=el("b",null,t.name);tl.append(b);
   $("#topicBanner").textContent="";$("#spinBtn").disabled=false;
@@ -534,10 +655,10 @@ function toSpin(){
 }
 function spin(){
   if(G.spinning||G.phase!=="spin")return;
-  const avail=TOPICS.map((t,i)=>i).filter(topicAvail);
-  const pick=avail[Math.floor(Math.random()*avail.length)];
-  const seg=Math.PI*2/TOPICS.length;
-  let target=-Math.PI/2-(pick+.5)*seg+(Math.random()-.5)*seg*.7;
+  const avail=WHEEL.map((x,i)=>i).filter(segAvail);
+  const pick=avail[rand(avail.length)];
+  const seg=Math.PI*2/WHEEL.length;
+  let target=-Math.PI/2-(pick+.5)*seg+(rand(1000)/1000-.5)*seg*.7;
   while(target<G.rot+Math.PI*2*6)target+=Math.PI*2;
   const from=G.rot,dur=matchMedia("(prefers-reduced-motion: reduce)").matches?600:4600,t0=performance.now();
   G.spinning=true;$("#spinBtn").disabled=true;SFX.whoosh();
@@ -550,25 +671,74 @@ function spin(){
   })(t0);
 }
 $("#spinBtn").addEventListener("click",spin);
-function onSpinEnd(t){
-  const b=$("#topicBanner");b.style.setProperty("--tc",TOPICS[t].c);b.textContent=TOPICS[t].n;
+function onSpinEnd(pos){
+  const id=WHEEL[pos],sp=typeof id==="string"?SPECIAL[id]:null;
+  const b=$("#topicBanner");b.style.setProperty("--tc",sp?sp.kc:TOPICS[id].c);b.textContent=sp?(id==="premio"?"¡Premio!":"¡Prenda!"):TOPICS[id].n;
   b.style.animation="none";void b.offsetWidth;b.style.animation="";
-  SFX.reveal();
-  setTimeout(()=>loadQuestion(t),1400);
+  sp&&id==="premio"?SFX.ok():SFX.reveal();
+  setTimeout(()=>sp?showCard(id):loadQuestion(id),1400);
+}
+
+/* ---- Premios y prendas ---- */
+function showCard(kind){
+  G.phase="card";G.primary=null;
+  const ti=G.active[G.turn],team=G.teams[ti];
+  const v=$("#cardView");v.style.setProperty("--kc",SPECIAL[kind].kc);
+  $("#wheelView").hidden=true;$("#qView").hidden=true;v.hidden=false;
+  const who=$("#cardWho");who.innerHTML="";who.style.setProperty("--tc",team.color);
+  who.append(document.createTextNode(kind==="premio"?"Premio para":"Prenda para"),el("b",null,team.name));
+  const f=$("#flip");f.classList.remove("open");
+  $("#cardFront").textContent=kind==="premio"?"★":"?";
+  $("#cardKind").textContent=kind==="premio"?"Carta premio":"Carta prenda";
+  let card;
+  if(kind==="premio"){card=draw("premio");$("#cardTitle").textContent=card.t;$("#cardDesc").textContent=card.d}
+  else{card=draw("prenda");$("#cardTitle").textContent="¡A cumplir!";$("#cardDesc").textContent=card}
+  cardCtrl();
+  setTimeout(()=>{f.classList.add("open");kind==="premio"?SFX.fanfare():SFX.bad();
+    setTimeout(()=>kind==="premio"?applyPremio(card,ti):prendaCtrl(ti),700)},500);
+}
+function cardCtrl(...nodes){const c=$("#cardCtrl");c.innerHTML="";nodes.forEach(n=>c.append(n))}
+function endCardBtn(){G.primary=endCard;return btn("Siguiente turno →","primary big",endCard)}
+function endCard(){if(G.phase!=="card")return;G.phase="between";G.turn=(G.turn+1)%G.active.length;toSpin()}
+function applyPremio(card,ti){
+  const t=G.teams[ti];
+  if(card.fx==="pts"){t.score+=card.n;cardCtrl(el("span","msg good",`+${card.n} puntos para ${t.name}`),endCardBtn());return}
+  if(card.fx==="steal"){
+    const others=G.active.filter(i=>i!==ti);const wrap=el("div","reb-teams");
+    others.forEach(i=>{const o=G.teams[i];const b=btn("Robarle a "+o.name,"",()=>{
+      const n=Math.min(5,o.score);o.score-=n;t.score+=n;SFX.ok();
+      cardCtrl(el("span","msg good",n?`${t.name} le robó ${n} puntos a ${o.name}`:`${o.name} no tenía puntos para robar`),endCardBtn())});
+      b.style.setProperty("--tc",o.color);wrap.append(b)});
+    cardCtrl(el("span","msg","¿A qué equipo le roban?"),wrap);return;
+  }
+  t.flags[card.fx]=true;
+  cardCtrl(el("span","msg good","Se usa en su próxima pregunta"),endCardBtn());
+}
+function prendaCtrl(ti){
+  const t=G.teams[ti];
+  cardCtrl(btn("¡Cumplida!","primary big",()=>{SFX.ok();cardCtrl(el("span","msg good",`¡Bien, ${t.name}!`),endCardBtn())}),
+    btn("No la cumplieron (−5)","",()=>{t.score=Math.max(0,t.score-5);SFX.bad();cardCtrl(el("span","msg bad",`${t.name} pierde 5 puntos`),endCardBtn())}));
 }
 
 /* ---- Pregunta ---- */
 function loadQuestion(t){
   const pool=Q.map((q,id)=>id).filter(id=>Q[id][0]===t&&!G.used.has(id));
-  const id=pool[Math.floor(Math.random()*pool.length)];
+  const id=pool[rand(pool.length)];
   G.used.add(id);if(G.persist){const s=loadUsed();s.add(id);saveUsed(s)}
   const q=Q[id];
   G.cur={id,topic:t,opts:shuffle(q[3].map((x,j)=>({t:x,ok:j===0}))),wrong:new Set(),team:G.active[G.turn],rebound:false,tried:new Set([G.active[G.turn]])};
-  $("#wheelView").hidden=true;$("#qView").hidden=false;
+  const tm=G.teams[G.cur.team];const fl=tm.flags||{};tm.flags={};
+  G.cur.double=!!fl.double;G.cur.extra=!!fl.extra;G.cur.removed=new Set();
+  if(fl.fifty){shuffle(G.cur.opts.map((o,k)=>k).filter(k=>!G.cur.opts[k].ok)).slice(0,2).forEach(k=>G.cur.removed.add(k))}
+  const bd=$("#qBadges");bd.innerHTML="";
+  if(G.cur.double)bd.append(el("span","badge","×2 puntos"));
+  if(fl.fifty)bd.append(el("span","badge","50/50"));
+  if(G.cur.extra)bd.append(el("span","badge","+10 s"));
+  $("#wheelView").hidden=true;$("#cardView").hidden=true;$("#qView").hidden=false;
   const tag=$("#qTag");tag.textContent=TOPICS[t].n;tag.style.background=TOPICS[t].c;
   $("#qText").textContent=q[1];
   const code=$("#qCode");code.hidden=!q[2];code.textContent=q[2]||"";
-  setWho();setTimerView(cfg.time,cfg.time);
+  const secs=cfg.time+(G.cur.extra?10:0);setWho();setTimerView(secs,secs);
   G.phase="ready";startAnswer();
 }
 function setWho(){const w=$("#qWho");const t=G.teams[G.cur.team];w.style.setProperty("--tc",t.color);w.textContent=(G.cur.rebound?"Rebote: ":"Responde: ")+t.name;w.classList.toggle("reb",G.cur.rebound);renderTop()}
@@ -579,10 +749,45 @@ function renderOpts(){
     const b=el("button","opt");b.type="button";b.dataset.k=k;
     const l=el("span","l",LETTERS[k]),t=el("span","t",o.t);b.append(l,t);
     if(G.cur.wrong.has(k))b.classList.add("wrong");
+    if(G.cur.removed.has(k)&&G.phase!=="result")b.classList.add("gone");
     if(G.phase==="result"){if(o.ok)b.classList.add("right");else if(!G.cur.wrong.has(k))b.classList.add("dim")}
-    if(live&&!G.cur.wrong.has(k))b.classList.add("live");
+    if(live&&!G.cur.wrong.has(k)&&!G.cur.removed.has(k))b.classList.add("live");
     b.addEventListener("click",()=>choose(k));box.append(b);
   });
+  renderJokers();
+}
+/* ---- Comodines (2 por equipo, boca abajo) ---- */
+const JOKER_TXT={web:{t:"Buscar en la web",short:"Web +1 min"},robo:{t:"Robar un integrante",short:"Robo de integrante"}};
+function renderJokers(){
+  const box=$("#jokers");box.innerHTML="";if(!G.cur)return;
+  const t=G.teams[G.cur.team];
+  const lab=el("span","jl");lab.style.setProperty("--tc",t.color);lab.append(document.createTextNode("Comodines de "),el("b",null,t.name));box.append(lab);
+  const canUse=G.phase==="answer"&&!G.cur.jokerUsed;
+  t.jokers.forEach((j,i)=>{
+    const b=el("button","joker",j.used?JOKER_TXT[j.k].short:"?");b.type="button";
+    if(j.used)b.classList.add("used");else if(canUse)b.classList.add("live");
+    b.setAttribute("aria-label",j.used?"Comodín usado: "+JOKER_TXT[j.k].t:"Comodín boca abajo");
+    b.addEventListener("click",()=>useJoker(i));box.append(b);
+  });
+}
+function setPaused(v){if(!TM)return;TM.paused=v;$("#timer").classList.toggle("paused",v);
+  const b=[...$("#ctrl").querySelectorAll("button")].find(x=>x.textContent.includes("Pausa")||x.textContent.includes("Seguir"));if(b)b.textContent=v?"▶ Seguir":"⏸ Pausa"}
+function useJoker(i){
+  if(G.phase!=="answer"||G.cur.jokerUsed)return;
+  const t=G.teams[G.cur.team],j=t.jokers[i];if(j.used)return;
+  j.used=true;G.cur.jokerUsed=true;const wasPaused=TM&&TM.paused;setPaused(true);renderJokers();
+  const others=G.active.filter(x=>x!==G.cur.team);
+  const rival=others.length===1?"del equipo "+G.teams[others[0]].name:"de otro equipo (el que elijan)";
+  $("#jWho").textContent="Comodín de "+t.name;
+  $("#jTitle").textContent=JOKER_TXT[j.k].t;
+  $("#jDesc").textContent=j.k==="web"?"Pueden buscar la respuesta en internet y tienen 1 minuto más para contestar.":`Llamen a un integrante ${rival} para que los ayude con esta pregunta.`;
+  const f=$("#jFlip");f.classList.remove("open");$("#jGo").hidden=true;$("#jokerLayer").hidden=false;
+  const prevPrimary=G.primary;
+  setTimeout(()=>{f.classList.add("open");SFX.fanfare();setTimeout(()=>{$("#jGo").hidden=false;G.primary=go},700)},450);
+  function go(){$("#jokerLayer").hidden=true;G.primary=prevPrimary;
+    if(TM&&j.k==="web"){TM.left+=60;TM.total=Math.max(TM.total,TM.left)}
+    setPaused(!!wasPaused)}
+  $("#jGo").onclick=go;
 }
 function ctrl(...nodes){const c=$("#ctrl");c.innerHTML="";nodes.forEach(n=>c.append(n))}
 function btn(txt,cls,fn){const b=el("button","btn "+(cls||""),txt);b.type="button";b.addEventListener("click",fn);return b}
@@ -596,7 +801,7 @@ function toReady(){
 function startAnswer(){
   if(G.phase!=="ready")return;
   G.phase="answer";renderOpts();
-  const secs=G.cur.rebound?cfg.rebTime:cfg.time;
+  const secs=G.cur.rebound?cfg.rebTime:cfg.time+(G.cur.extra?10:0);
   G.primary=null;
   ctrl(el("span","msg","Tocá la opción que elige el equipo"),btn("⏸ Pausa","",togglePause),btn("No contestan","",()=>{stopTimer();timeUp(false)}),...(G.cur.rebound?[]:[btn("Saltear pregunta","small",skipQuestion)]));
   startTimer(secs,()=>timeUp(true));
@@ -620,15 +825,14 @@ function startTimer(sec,onEnd){
   TM.raf=requestAnimationFrame(loop);
 }
 function stopTimer(){if(TM){cancelAnimationFrame(TM.raf);TM=null}$("#timer").classList.remove("paused")}
-function togglePause(){if(!TM)return;TM.paused=!TM.paused;$("#timer").classList.toggle("paused",TM.paused);
-  const b=[...$("#ctrl").querySelectorAll("button")].find(x=>x.textContent.includes("Pausa")||x.textContent.includes("Seguir"));if(b)b.textContent=TM.paused?"▶ Seguir":"⏸ Pausa"}
+function togglePause(){if(!TM||!$("#jokerLayer").hidden)return;setPaused(!TM.paused)}
 
 /* ---- Respuestas ---- */
 function choose(k){
-  if(G.phase!=="answer"||G.cur.wrong.has(k))return;
+  if(G.phase!=="answer"||G.cur.wrong.has(k)||G.cur.removed.has(k))return;
   stopTimer();
   if(G.cur.opts[k].ok){
-    const pts=G.cur.rebound?cfg.rebPts:cfg.pts;G.teams[G.cur.team].score+=pts;
+    const pts=G.cur.rebound?cfg.rebPts:cfg.pts*(G.cur.double?2:1);G.teams[G.cur.team].score+=pts;
     SFX.ok();showResult(`¡Correcto! +${pts} para ${G.teams[G.cur.team].name}`,"good");
   }else{
     G.cur.wrong.add(k);SFX.bad();afterMiss("Incorrecto");
@@ -701,6 +905,23 @@ function showFinal(){
   $("#final").hidden=false;SFX.drum(3);
   setTimeout(revealWinner,3100);
 }
+const REVANCHA=[
+  "Todo buen programa necesita varios intentos antes de compilar. ¡La revancha los espera!",
+  "Esto no fue una derrota, fue un bug. Se corrige en la próxima partida.",
+  "Perder una partida es como un error de compilación: te muestra qué repasar. ¡Vuelvan con todo!",
+  "La versión 1.0 salió con errores. La 2.0 va a ser la ganadora.",
+  "Hoy el if les dio false. En la revancha puede dar true.",
+  "Ningún programador acierta todo de primera. Repasen un poco y pidan la revancha."
+];
+function revancha(losers){
+  const box=el("div","revancha");
+  box.append(el("p","rt","¡Revancha!"));
+  const n=el("p","rn");losers.forEach((i,k)=>{const s=el("span",null,G.teams[i].name);s.style.color=G.teams[i].color;n.append(s);if(k<losers.length-1)n.append(document.createTextNode(" · "))});
+  box.append(n);
+  box.append(el("p","rm",REVANCHA[rand(REVANCHA.length)]));
+  const c=el("p","rm");c.innerHTML="<code>while (!ganamos) { practicar(); }</code>";box.append(c);
+  return box;
+}
 function revealWinner(){
   const all=G.teams.map((t,i)=>i);const max=Math.max(...all.map(i=>G.teams[i].score));
   const tied=all.filter(i=>G.teams[i].score===max);
@@ -717,17 +938,20 @@ function revealWinner(){
     SFX.reveal();
   }
   card.append(ranking());
+  const losers=all.filter(i=>!tied.includes(i));
+  if(losers.length)card.append(revancha(losers));
   const acts=el("div","layer-actions");
   if(tied.length>1){
     acts.append(btn("Pregunta de desempate","primary big",()=>{$("#final").hidden=true;G.tiebreak=true;G.active=tied;G.turn=0;toSpin()}));
     acts.append(btn("Ganan todos los empatados","",()=>{SFX.fanfare();confetti(tied.map(i=>G.teams[i].color).concat("#ffc933"))}));
   }
-  acts.append(btn("Nueva partida",tied.length>1?"":"primary big",newGame));
+  acts.append(btn("Jugar la revancha",tied.length>1?"":"primary big",()=>{stopConfetti();$("#final").hidden=true;startGame(true)}));
+  acts.append(btn("Nueva partida","",newGame));
   card.append(acts);
 }
 function ranking(){const ol=el("ol","rank");G.teams.map((t,i)=>i).sort((a,b)=>G.teams[b].score-G.teams[a].score).forEach((i,p)=>{const t=G.teams[i];const li=el("li");const a=el("span",null,`${p+1}. ${t.name}`);a.style.color=t.color;li.append(a,el("span",null,t.score));ol.append(li)});return ol}
 function trophy(color){const d=document.createElement("div");d.innerHTML=`<svg class="trophy" viewBox="0 0 100 100" aria-hidden="true"><path d="M28 14h44v20c0 14-10 26-22 26S28 48 28 34z" fill="#ffc933"/><path d="M28 20H14c0 14 6 22 16 22M72 20h14c0 14-6 22-16 22" fill="none" stroke="#ffc933" stroke-width="6"/><rect x="44" y="58" width="12" height="14" fill="#e0a800"/><rect x="30" y="72" width="40" height="12" rx="3" fill="${color}"/><text x="50" y="42" text-anchor="middle" font-family="Bungee, Impact, sans-serif" font-size="18" fill="#6b4d00">1</text></svg>`;return d.firstChild}
-function newGame(){stopConfetti();$("#final").hidden=true;$("#game").hidden=true;$("#setup").hidden=false;G.phase="setup";updatePoolInfo()}
+function newGame(){stopConfetti();$("#jokerLayer").hidden=true;$("#final").hidden=true;$("#game").hidden=true;$("#setup").hidden=false;G.phase="setup";updatePoolInfo()}
 
 /* ---- Confeti ---- */
 let CF=null;
@@ -759,8 +983,10 @@ document.addEventListener("keydown",e=>{
     e.preventDefault();
     if(G.phase==="spin")spin();else if(G.primary)G.primary();return;
   }
+  if(!$("#jokerLayer").hidden)return;
   const k="abcd".indexOf(e.key.toLowerCase());const n="1234".indexOf(e.key);
   if(G.phase==="answer"&&(k>=0||n>=0)){choose(k>=0?k:n);return}
+  if(e.key.toLowerCase()==="j"&&G.phase==="answer"){const i=G.teams[G.cur.team].jokers.findIndex(x=>!x.used);if(i>=0)useJoker(i);return}
   if(e.key.toLowerCase()==="p"&&G.phase==="answer")togglePause();
 });
 
