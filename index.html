@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ruleta de Programación 2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Rubik:wght@400;500;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: pantalla de concurso para proyectar en clase. Barra superior fija, escenario central (ruleta o pregunta) y capas para puntajes y final. Diseño oscuro a propósito: se lee mejor en proyector. */
+:root{
+  color-scheme:dark;
+  --bg:#111836; --bg2:#19224a; --panel:#212c5c; --line:#35427e;
+  --fg:#f6f2e9; --muted:#aab2d8; --accent:#ffc933; --good:#3ad283; --bad:#ff5a5f; --code:#0b1029;
+  --display:"Bungee","Impact","Arial Black",system-ui,sans-serif;
+  --body:"Rubik",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.45;
+  background-image:radial-gradient(circle at 1px 1px,rgba(255,255,255,.05) 1px,transparent 0);background-size:26px 26px}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wrap{min-height:100%;display:flex;flex-direction:column;padding-inline:16px;padding-block:14px;max-width:1400px;margin:0 auto}
+
+/* Botones */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5em;padding:.7em 1.2em;border-radius:12px;font-weight:700;
+  background:var(--panel);border:2px solid var(--line);transition:transform .1s,background .15s}
+.btn:hover{background:var(--line)}
+.btn:active{transform:translateY(2px)}
+.btn.primary{background:var(--accent);color:#1a1400;border-color:var(--accent);box-shadow:0 5px 0 #b88a00}
+.btn.primary:hover{background:#ffd75c}
+.btn.primary:active{box-shadow:0 2px 0 #b88a00;transform:translateY(3px)}
+.btn.big{font-size:1.35rem;padding:.75em 1.6em}
+.btn.small{padding:.45em .8em;font-size:.9rem;border-radius:9px}
+.btn[disabled]{opacity:.4;pointer-events:none}
+
+/* ---------- Configuración ---------- */
+#setup{flex:1;display:grid;place-items:center;padding-block:20px}
+.setup-card{width:100%;max-width:860px;display:grid;gap:22px}
+.brand{font-family:var(--display);font-size:clamp(2rem,6vw,3.6rem);line-height:1;letter-spacing:.01em;text-wrap:balance;margin:0}
+.brand span{color:var(--accent)}
+.lead{color:var(--muted);margin:.5rem 0 0;max-width:62ch}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:720px){.cols{grid-template-columns:1fr}}
+.box{background:var(--bg2);border:2px solid var(--line);border-radius:18px;padding:18px;display:grid;gap:14px;min-width:0;align-content:start}
+.box h2{margin:0;font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.row label{font-weight:500}
+.stepper{display:flex;align-items:center;gap:6px}
+.stepper button{width:36px;height:36px;border-radius:10px;background:var(--panel);border:2px solid var(--line);font-weight:800;font-size:1.1rem}
+.stepper output{min-width:3ch;text-align:center;font-weight:800;font-size:1.2rem;font-variant-numeric:tabular-nums}
+.team-list{display:grid;gap:8px}
+.team-row{display:flex;align-items:center;gap:10px}
+.swatch{width:22px;height:22px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 3px rgba(0,0,0,.2)}
+.team-row input,.txt{flex:1;min-width:0;background:var(--panel);border:2px solid var(--line);border-radius:10px;color:var(--fg);padding:.5em .7em;font:inherit;font-weight:500}
+.txt{max-width:9rem;text-align:center;font-variant-numeric:tabular-nums}
+.check{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.check input{width:20px;height:20px;accent-color:var(--accent);margin-top:2px;flex:none}
+.hint{color:var(--muted);font-size:.88rem;margin:0}
+.setup-actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.tchip{font-size:.78rem;font-weight:700;padding:.25em .6em;border-radius:99px;color:#141a33}
+
+/* ---------- Juego ---------- */
+#game{flex:1;display:flex;flex-direction:column;gap:14px;min-height:0}
+.topbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between}
+.logo{font-family:var(--display);font-size:1.1rem;white-space:nowrap}
+.logo span{color:var(--accent)}
+.counter{font-family:var(--display);font-size:1.1rem;background:var(--panel);border:2px solid var(--line);padding:.3em .8em;border-radius:12px;font-variant-numeric:tabular-nums}
+.counter.tb{background:var(--bad);border-color:var(--bad)}
+.teams-bar{display:flex;gap:8px;flex-wrap:wrap;flex:1;justify-content:center;min-width:0}
+.tpill{display:flex;align-items:center;gap:8px;padding:.35em .8em;border-radius:99px;background:var(--bg2);border:2px solid var(--line);font-weight:700;font-size:.95rem;transition:all .2s}
+.tpill i{width:12px;height:12px;border-radius:50%;display:block}
+.tpill.on{border-color:var(--tc);background:color-mix(in srgb,var(--tc) 22%,var(--bg2));transform:scale(1.06)}
+.tpill.out{opacity:.35}
+.tools{display:flex;gap:6px}
+
+.stage{flex:1;display:grid;place-items:center;min-height:0}
+/* Ruleta */
+#wheelView{display:grid;justify-items:center;gap:16px;width:100%}
+.turn{font-size:clamp(1.1rem,2.6vw,1.6rem);font-weight:700;text-align:center}
+.turn b{font-family:var(--display);font-weight:400;font-size:1.35em;color:var(--tc);display:block;line-height:1.1}
+.wheel-box{position:relative;width:min(62vh,88vw,560px);aspect-ratio:1;max-width:100%}
+.wheel-box canvas{width:100%;height:100%;display:block;filter:drop-shadow(0 14px 30px rgba(0,0,0,.45))}
+.pointer{position:absolute;left:50%;top:-14px;transform:translateX(-50%);width:0;height:0;border-left:20px solid transparent;border-right:20px solid transparent;border-top:38px solid var(--fg);filter:drop-shadow(0 3px 3px rgba(0,0,0,.5));z-index:2}
+.topic-banner{font-family:var(--display);font-size:clamp(1.6rem,4.5vw,2.8rem);min-height:1.3em;text-align:center;color:var(--tc,var(--fg));animation:pop .5s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* Pregunta */
+#qView{width:100%;max-width:1150px;display:grid;gap:18px}
+.q-head{display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center}
+.q-meta{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.tag{font-weight:800;font-size:.85rem;letter-spacing:.08em;text-transform:uppercase;padding:.35em .8em;border-radius:8px;color:#141a33}
+.who{font-weight:700;font-size:1.05rem;padding:.3em .8em;border-radius:8px;border:2px solid var(--tc);color:var(--fg);background:color-mix(in srgb,var(--tc) 18%,transparent)}
+.who.reb{animation:pulse 1s infinite}
+@keyframes pulse{50%{background:color-mix(in srgb,var(--tc) 45%,transparent)}}
+.q-text{font-size:clamp(1.5rem,3.6vw,2.6rem);font-weight:700;line-height:1.2;margin:0;text-wrap:balance}
+.code{margin:0;background:var(--code);border:2px solid var(--line);border-radius:14px;padding:16px 20px;font-family:var(--mono);font-weight:500;font-size:clamp(1rem,2.1vw,1.45rem);line-height:1.5;overflow-x:auto;color:#dfe6ff}
+.timer{position:relative;width:clamp(110px,15vw,170px);aspect-ratio:1}
+.timer svg{width:100%;height:100%;transform:rotate(-90deg)}
+.timer circle{fill:none;stroke-width:10}
+.timer .trk{stroke:var(--panel)}
+.timer .bar{stroke:var(--accent);stroke-linecap:round;transition:stroke .3s}
+.timer.warn .bar{stroke:var(--bad)}
+.timer .num{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--display);font-size:clamp(2.2rem,5vw,3.6rem);font-variant-numeric:tabular-nums}
+.timer.warn .num{color:var(--bad);animation:beat 1s infinite}
+@keyframes beat{15%{transform:scale(1.15)}30%{transform:scale(1)}}
+.timer.paused .num{opacity:.4}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:720px){.opts{grid-template-columns:1fr}.q-head{grid-template-columns:1fr}.timer{justify-self:center}}
+.opt{display:flex;align-items:center;gap:14px;text-align:left;padding:14px 18px;border-radius:16px;background:var(--bg2);border:3px solid var(--line);font-size:clamp(1.05rem,2.2vw,1.45rem);font-weight:500;min-width:0;transition:transform .12s,border-color .15s,background .15s}
+.opt .l{flex:none;width:2em;height:2em;border-radius:10px;display:grid;place-items:center;font-family:var(--display);font-size:.95em;background:var(--panel)}
+.opt .t{min-width:0;overflow-wrap:anywhere}
+.opt.live:hover{border-color:var(--accent);transform:translateY(-2px)}
+.opt:not(.live){cursor:default}
+.opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 18%,var(--bg2));opacity:.6}
+.opt.wrong .t{text-decoration:line-through}
+.opt.wrong .l{background:var(--bad)}
+.opt.right{border-color:var(--good);background:color-mix(in srgb,var(--good) 25%,var(--bg2));animation:pop .45s}
+.opt.right .l{background:var(--good);color:#06240f}
+.opt.dim{opacity:.35}
+.ctrl{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:center;min-height:64px}
+.msg{font-size:clamp(1.1rem,2.4vw,1.5rem);font-weight:700;text-align:center}
+.msg.good{color:var(--good)} .msg.bad{color:var(--bad)}
+.reb-teams{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.reb-teams .btn{border-color:var(--tc);background:color-mix(in srgb,var(--tc) 22%,var(--bg2))}
+.keys{color:var(--muted);font-size:.8rem;text-align:center}
+.keys kbd{font-family:var(--mono);background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:0 .35em}
+
+/* ---------- Capas ---------- */
+.layer{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:16px;background:rgba(8,11,28,.92);backdrop-filter:blur(6px);overflow:auto}
+.layer-card{width:100%;max-width:820px;display:grid;gap:22px;justify-items:center;text-align:center}
+.layer h2{font-family:var(--display);font-weight:400;font-size:clamp(1.8rem,5vw,3.2rem);margin:0;line-height:1.05;text-wrap:balance}
+.layer .sub{color:var(--muted);font-size:1.1rem;margin:0}
+.board{width:100%;display:grid;gap:12px}
+.bar-row{display:grid;grid-template-columns:minmax(0,12rem) 1fr 4.5rem;gap:12px;align-items:center;text-align:left}
+.bar-row .n{font-weight:800;font-size:1.2rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{height:34px;background:var(--bg2);border-radius:10px;overflow:hidden}
+.bar-fill{height:100%;width:0;border-radius:10px;transition:width 1.4s cubic-bezier(.2,.8,.2,1)}
+.bar-row .s{font-family:var(--display);font-size:1.5rem;text-align:right;font-variant-numeric:tabular-nums}
+@media (max-width:560px){.bar-row{grid-template-columns:1fr 3.5rem}.bar-track{grid-column:1/-1;grid-row:2}}
+.suspense{font-family:var(--display);font-size:clamp(1.8rem,5.5vw,3.4rem);animation:throb .6s infinite alternate}
+@keyframes throb{to{transform:scale(1.06);opacity:.75}}
+.winner{font-family:var(--display);font-size:clamp(2.6rem,10vw,6.5rem);line-height:1;color:var(--tc);text-shadow:0 6px 0 rgba(0,0,0,.35);animation:win .9s cubic-bezier(.2,1.7,.4,1);text-wrap:balance}
+@keyframes win{from{transform:scale(.2) rotate(-8deg);opacity:0}to{transform:none;opacity:1}}
+.trophy{width:110px;height:110px}
+.rank{width:100%;max-width:520px;display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.rank li{display:flex;justify-content:space-between;gap:12px;padding:.55em 1em;border-radius:12px;background:var(--bg2);font-weight:700;font-size:1.1rem}
+.rank li span:last-child{font-family:var(--display);font-weight:400;font-variant-numeric:tabular-nums}
+.layer-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+#confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:30}
+
+/* Banco */
+.bank{max-width:980px;width:100%;text-align:left;justify-items:stretch}
+.bank-head{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.bank-head h2{font-size:1.8rem}
+.bank-list{display:grid;gap:18px}
+.bank-topic h3{margin:0 0 8px;font-size:1rem;letter-spacing:.1em;text-transform:uppercase}
+.bank-topic ol{margin:0;padding-left:1.6em;display:grid;gap:10px}
+.bank-topic li{padding-left:.3em}
+.bank-topic .code{font-size:.9rem;padding:8px 12px;margin-top:6px}
+.bank-topic .ans{color:var(--good);font-weight:700}
+.used-tag{font-size:.72rem;font-weight:700;background:var(--panel);color:var(--muted);padding:.1em .5em;border-radius:6px;margin-left:.4em}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<style>[hidden]{display:none!important}body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- CONFIGURACIÓN -->
+  <section id="setup">
+    <div class="setup-card">
+      <div>
+        <h1 class="brand">Ruleta de <span>Programación&nbsp;2</span></h1>
+        <p class="lead">Cada equipo gira la ruleta, sale un tema y una pregunta al azar. Tienen tiempo limitado para contestar; si fallan o se acaba el tiempo, rebota a otro equipo. Los puntajes se muestran solo en algunos momentos.</p>
+      </div>
+      <div class="cols">
+        <div class="box">
+          <h2>Equipos</h2>
+          <div class="row"><label for="nTeams">Cantidad de equipos</label>
+            <div class="stepper" data-key="teams" data-min="2" data-max="8" data-step="1"><button type="button" data-d="-1" aria-label="Menos">−</button><output id="nTeams"></output><button type="button" data-d="1" aria-label="Más">+</button></div>
+          </div>
+          <div class="team-list" id="teamList"></div>
+        </div>
+        <div class="box">
+          <h2>Reglas</h2>
+          <div class="row"><label>Preguntas por partida</label>
+            <div class="stepper" data-key="q" data-min="3" data-max="50" data-step="1"><button type="button" data-d="-1" aria-label="Menos">−</button><output></output><button type="button" data-d="1" aria-label="Más">+</button></div></div>
+          <div class="row"><label>Segundos para contestar</label>
+            <div class="stepper" data-key="time" data-min="5" data-max="90" data-step="5"><button type="button" data-d="-1" aria-label="Menos">−</button><output></output><button type="button" data-d="1" aria-label="Más">+</button></div></div>
+          <div class="row"><label>Segundos en el rebote</label>
+            <div class="stepper" data-key="rebTime" data-min="5" data-max="90" data-step="5"><button type="button" data-d="-1" aria-label="Menos">−</button><output></output><button type="button" data-d="1" aria-label="Más">+</button></div></div>
+          <div class="row"><label>Puntos por acierto</label>
+            <div class="stepper" data-key="pts" data-min="1" data-max="100" data-step="5"><button type="button" data-d="-1" aria-label="Menos">−</button><output></output><button type="button" data-d="1" aria-label="Más">+</button></div></div>
+          <div class="row"><label>Puntos por acierto en rebote</label>
+            <div class="stepper" data-key="rebPts" data-min="0" data-max="100" data-step="5"><button type="button" data-d="-1" aria-label="Menos">−</button><output></output><button type="button" data-d="1" aria-label="Más">+</button></div></div>
+          <div class="row"><label for="checks">Mostrar puntajes después de la pregunta</label>
+            <input class="txt" id="checks" type="text" inputmode="numeric"></div>
+          <p class="hint">El puntaje final siempre se revela al terminar, con la animación del ganador.</p>
+        </div>
+      </div>
+      <div class="box">
+        <h2>Banco de preguntas</h2>
+        <label class="check"><input type="checkbox" id="noRepeat" checked><span>No repetir preguntas que ya salieron en partidas anteriores (sirve para jugar con otro grupo)</span></label>
+        <div class="row"><p class="hint" id="poolInfo"></p>
+          <div class="tools"><button class="btn small" type="button" id="bankBtn">Ver las 100 preguntas</button><button class="btn small" type="button" id="resetUsed">Reiniciar banco</button></div></div>
+      </div>
+      <div class="setup-actions">
+        <p class="hint">Proyectá esta pantalla. Tocá la opción que dice el equipo, o usá las teclas <b>A–D</b> y <b>Espacio</b>.</p>
+        <button class="btn primary big" type="button" id="startBtn">¡A jugar!</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- JUEGO -->
+  <section id="game" hidden>
+    <div class="topbar">
+      <div class="logo">Ruleta <span>P2</span></div>
+      <div class="teams-bar" id="teamsBar"></div>
+      <div class="tools">
+        <div class="counter" id="counter"></div>
+        <button class="btn small" type="button" id="muteBtn" aria-label="Sonido">🔊</button>
+        <button class="btn small" type="button" id="fsBtn" aria-label="Pantalla completa">⛶</button>
+        <button class="btn small" type="button" id="quitBtn">Salir</button>
+      </div>
+    </div>
+    <div class="stage">
+      <div id="wheelView">
+        <div class="turn" id="turnLabel"></div>
+        <div class="wheel-box"><div class="pointer"></div><canvas id="wheel"></canvas></div>
+        <div class="topic-banner" id="topicBanner"></div>
+        <button class="btn primary big" type="button" id="spinBtn">Girar la ruleta</button>
+      </div>
+      <div id="qView" hidden>
+        <div class="q-head">
+          <div>
+            <div class="q-meta"><span class="tag" id="qTag"></span><span class="who" id="qWho"></span></div>
+            <p class="q-text" id="qText"></p>
+          </div>
+          <div class="timer" id="timer">
+            <svg viewBox="0 0 120 120"><circle class="trk" cx="60" cy="60" r="52"/><circle class="bar" id="tBar" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="0"/></svg>
+            <div class="num" id="tNum">20</div>
+          </div>
+        </div>
+        <pre class="code" id="qCode" hidden></pre>
+        <div class="opts" id="opts"></div>
+        <div class="ctrl" id="ctrl"></div>
+        <p class="keys"><kbd>A</kbd>–<kbd>D</kbd> elegir opción · <kbd>Espacio</kbd> acción principal · <kbd>P</kbd> pausa</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Puntajes parciales -->
+<div class="layer" id="scores" hidden>
+  <div class="layer-card">
+    <p class="sub" id="scoresSub"></p>
+    <h2 id="scoresTitle">Así van los puntajes</h2>
+    <div class="board" id="board"></div>
+    <button class="btn primary big" type="button" id="scoresGo">Seguir jugando</button>
+  </div>
+</div>
+
+<!-- Final -->
+<div class="layer" id="final" hidden>
+  <div class="layer-card" id="finalCard"></div>
+</div>
+
+<!-- Banco -->
+<div class="layer" id="bank" hidden>
+  <div class="layer-card bank">
+    <div class="bank-head"><h2>Banco de preguntas</h2><button class="btn" type="button" id="bankClose">Cerrar</button></div>
+    <p class="hint">La respuesta correcta está en verde. En el juego las opciones aparecen mezcladas.</p>
+    <div class="bank-list" id="bankList"></div>
+  </div>
+</div>
+<canvas id="confetti" hidden></canvas>
+
+<script>
+/* ================= DATOS ================= */
+const TOPICS=[
+  {n:"Variables",c:"#ff6b6b"},{n:"if / else",c:"#ff9f43"},{n:"while",c:"#ffc933"},{n:"for",c:"#9bd65a"},
+  {n:"Arrays",c:"#2ec4b6"},{n:"Métodos",c:"#4cb5ff"},{n:"Clases",c:"#8a96ff"},{n:"Objetos",c:"#b18cff"},
+  {n:"Encapsulamiento",c:"#ea7fd6"},{n:"Getters y setters",c:"#ff8fb1"}
+];
+// [tema, pregunta, código, [correcta, incorrecta, incorrecta, incorrecta]]
+const Q=[
+[0,"¿Qué es una variable?","",["Un espacio en memoria con nombre que guarda un valor","Una instrucción que repite código","Un tipo de bucle","Un mensaje que se muestra en pantalla"]],
+[0,"¿Qué tipo de dato usarías para guardar la edad de una persona?","",["int","String","boolean","char"]],
+[0,"¿Qué tipo de dato guarda solo verdadero o falso?","",["boolean","int","String","double"]],
+[0,"¿Cuál de estos es un nombre de variable válido en Java?","",["edadAlumno","2edad","edad alumno","class"]],
+[0,"¿Cuánto vale x al final?","int x = 5;\nx = x + 3;",["8","5","3","53"]],
+[0,"¿Qué tipo de dato usarías para guardar \"Bella Unión\"?","",["String","char","int","boolean"]],
+[0,"¿Qué hace el operador = en Java?","",["Asigna un valor a una variable","Compara si dos valores son iguales","Suma dos números","Niega una condición"]],
+[0,"¿Cuánto vale a?","int a = 7 / 2;",["3","3.5","4","2"]],
+[0,"¿Qué tipo usarías para un precio con decimales, como 149.90?","",["double","int","boolean","char"]],
+[0,"¿Cuánto vale n al final?","int n = 10;\nn++;",["11","10","9","12"]],
+
+[1,"¿Qué se muestra en pantalla?","if (5 > 3) {\n  System.out.println(\"Sí\");\n} else {\n  System.out.println(\"No\");\n}",["Sí","No","Sí y No","Nada"]],
+[1,"¿Qué operador compara si dos números son iguales?","",["==","=","!=","=>"]],
+[1,"¿Cuándo se ejecuta el bloque else?","",["Cuando la condición del if es falsa","Cuando la condición del if es verdadera","Siempre, después del if","Nunca se ejecuta"]],
+[1,"¿Qué se muestra en pantalla?","int nota = 7;\nif (nota >= 6) {\n  System.out.println(\"Aprobado\");\n} else {\n  System.out.println(\"Reprobado\");\n}",["Aprobado","Reprobado","7","Nada"]],
+[1,"¿Qué significa el operador && ?","",["Y: se tienen que cumplir las dos condiciones","O: alcanza con una condición","No: invierte la condición","Distinto de"]],
+[1,"¿Qué significa el operador || ?","",["O: alcanza con que una condición sea verdadera","Y: se tienen que cumplir las dos","Igual a","Mayor o igual"]],
+[1,"¿Qué se muestra en pantalla?","int x = 4;\nif (x % 2 == 0) {\n  System.out.println(\"Par\");\n} else {\n  System.out.println(\"Impar\");\n}",["Par","Impar","0","4"]],
+[1,"¿Qué tipo de valor tiene que dar la condición de un if?","",["boolean","int","String","char"]],
+[1,"¿Qué operador significa \"distinto de\"?","",["!=","==","<>","=!"]],
+[1,"¿Qué se muestra en pantalla?","int t = 30;\nif (t > 35) {\n  System.out.println(\"Mucho calor\");\n} else if (t > 25) {\n  System.out.println(\"Calor\");\n} else {\n  System.out.println(\"Templado\");\n}",["Calor","Mucho calor","Templado","Calor y Templado"]],
+
+[2,"¿Cuándo se detiene un bucle while?","",["Cuando su condición es falsa","Cuando su condición es verdadera","Después de 10 vueltas","Nunca se detiene"]],
+[2,"¿Cuánto vale i al terminar?","int i = 0;\nwhile (i < 3) {\n  i++;\n}",["3","2","4","0"]],
+[2,"¿Qué pasa si la condición de un while nunca se vuelve falsa?","",["Se produce un bucle infinito","El programa se saltea el while","Se ejecuta una sola vez","Da error al compilar"]],
+[2,"¿Cuántas veces se imprime \"Hola\"?","int i = 5;\nwhile (i < 3) {\n  System.out.println(\"Hola\");\n  i++;\n}",["Ninguna","Una","Tres","Cinco"]],
+[2,"¿Qué diferencia tiene do-while con while?","",["do-while se ejecuta al menos una vez","do-while no tiene condición","while se ejecuta al menos una vez","No hay ninguna diferencia"]],
+[2,"¿Qué se muestra en pantalla?","int c = 1;\nwhile (c <= 4) {\n  System.out.print(c);\n  c++;\n}",["1234","123","01234","12345"]],
+[2,"¿Qué instrucción corta un bucle de inmediato?","",["break","continue","else","case"]],
+[2,"¿Cuánto vale s al terminar?","int s = 0;\nint i = 1;\nwhile (i <= 3) {\n  s = s + i;\n  i++;\n}",["6","3","4","0"]],
+[2,"En un while, ¿qué se evalúa antes de cada vuelta?","",["La condición","El valor de retorno","El nombre del bucle","El tipo de dato"]],
+[2,"¿Cuánto vale n al terminar?","int n = 10;\nwhile (n > 0) {\n  n = n - 3;\n}",["-2","1","0","-3"]],
+
+[3,"¿Cuántas veces se repite este for?","for (int i = 0; i < 5; i++) {\n  // ...\n}",["5","4","6","0"]],
+[3,"¿Cuáles son las tres partes de un for?","",["Inicialización, condición e incremento","Inicio, medio y fin","Variable, método y clase","if, else y while"]],
+[3,"¿Qué se muestra en pantalla?","for (int i = 1; i <= 3; i++) {\n  System.out.print(i);\n}",["123","012","0123","1234"]],
+[3,"¿Cuántas veces se repite este for?","for (int i = 10; i > 0; i -= 2) {\n  // ...\n}",["5","10","4","6"]],
+[3,"¿Cuándo conviene usar for en lugar de while?","",["Cuando se sabe cuántas veces se va a repetir","Cuando no se sabe cuándo termina","Cuando no hay condición","Nunca, son lo mismo"]],
+[3,"¿Qué se muestra en pantalla?","for (int i = 0; i < 3; i++) {\n  System.out.print(\"*\");\n}",["***","**","****","*"]],
+[3,"¿Qué hace i++ en un for?","",["Suma 1 a i","Resta 1 a i","Duplica i","Pone i en cero"]],
+[3,"¿Cuánto vale s al terminar?","int s = 0;\nfor (int i = 1; i <= 4; i++) {\n  s += i;\n}",["10","4","6","9"]],
+[3,"¿Qué valor tiene i en la primera vuelta?","for (int i = 0; i < 10; i++) {\n  // ...\n}",["0","1","10","9"]],
+[3,"¿Qué hace continue dentro de un for?","",["Salta a la siguiente vuelta","Termina el bucle","Reinicia el bucle desde cero","Termina el programa"]],
+
+[4,"¿En qué índice empieza un array en Java?","",["0","1","-1","Depende del tamaño"]],
+[4,"¿Qué valor tiene n[1]?","int[] n = {4, 8, 15};",["8","4","15","1"]],
+[4,"¿Cómo se obtiene el largo de un array llamado v?","",["v.length","v.length()","v.size()","length(v)"]],
+[4,"¿Cuántos elementos tiene este array?","int[] a = new int[5];",["5","4","6","0"]],
+[4,"Si un array tiene 10 elementos, ¿cuál es su último índice?","",["9","10","11","1"]],
+[4,"¿Qué pasa si accedés a un índice que no existe en el array?","",["Da un error (ArrayIndexOutOfBoundsException)","Devuelve 0","El array se agranda solo","Devuelve el último elemento"]],
+[4,"¿Se puede cambiar el tamaño de un array después de crearlo?","",["No, su tamaño es fijo","Sí, con el método resize()","Sí, se agranda solo","Solo si es de tipo String"]],
+[4,"¿Qué valor tiene d[2]?","String[] d = {\"lun\", \"mar\", \"mie\"};",["\"mie\"","\"mar\"","\"lun\"","Da error"]],
+[4,"¿Qué valor tiene a[0]?","int[] a = new int[3];",["0","null","1","Da error"]],
+[4,"¿Qué guarda un array?","",["Varios valores del mismo tipo","Un solo valor","Solo textos","Valores de tipos mezclados"]],
+
+[5,"¿Qué es un método?","",["Un bloque de código con nombre que hace una tarea","Una variable que guarda números","Un tipo de dato","Un archivo del proyecto"]],
+[5,"¿Qué significa void en un método?","",["Que no devuelve ningún valor","Que devuelve un número","Que es privado","Que no recibe parámetros"]],
+[5,"¿Qué palabra se usa para que un método devuelva un valor?","",["return","void","break","new"]],
+[5,"¿Qué devuelve doble(6)?","int doble(int x) {\n  return x * 2;\n}",["12","6","8","36"]],
+[5,"¿Qué son los parámetros de un método?","",["Los valores que recibe el método","Los valores que devuelve","El nombre del método","Las variables de la clase"]],
+[5,"¿Qué tipo de dato devuelve este método?","public static int sumar(int a, int b)",["int","void","static","public"]],
+[5,"¿Qué es la sobrecarga de métodos?","",["Métodos con el mismo nombre y distintos parámetros","Un método que se llama demasiadas veces","Un método muy largo","Un método sin return"]],
+[5,"¿Cuál es una ventaja de usar métodos?","",["Reutilizar código y organizarlo mejor","Que el programa ocupe más memoria","No tener que usar variables","Evitar usar clases"]],
+[5,"¿Qué devuelve esMayor(15)?","boolean esMayor(int edad) {\n  return edad >= 18;\n}",["false","true","15","18"]],
+[5,"¿Cómo se llama (invoca) al método saludar, que no recibe parámetros?","",["saludar();","saludar;","call saludar();","saludar[];"]],
+
+[6,"¿Qué es una clase?","",["Un molde que define atributos y métodos","Un objeto ya creado","Un tipo de bucle","Una variable de tipo texto"]],
+[6,"¿Qué palabra se usa para declarar una clase?","",["class","new","object","void"]],
+[6,"¿Qué son los atributos de una clase?","",["Los datos o características que tiene","Las acciones que realiza","Los objetos creados","Los errores del programa"]],
+[6,"¿Qué es un constructor?","",["Un método especial que se ejecuta al crear un objeto","Un método que borra objetos","Un atributo de tipo int","Un bucle especial"]],
+[6,"¿Qué nombre tiene el constructor de una clase?","",["El mismo nombre que la clase","constructor","main","init"]],
+[6,"¿Qué tipo de retorno tiene un constructor?","",["Ninguno, ni siquiera void","void","int","boolean"]],
+[6,"Según la convención de Java, ¿cómo se escribe el nombre de una clase?","",["Alumno","alumno","ALUMNO","_alumno"]],
+[6,"En una clase Auto, ¿cuál de estos es un atributo?","",["color","arrancar()","new","frenar()"]],
+[6,"En una clase Perro, ¿cuál de estos es un método?","",["ladrar()","raza","nombre","edad"]],
+[6,"¿A qué hace referencia this dentro de una clase?","",["Al objeto actual","A la clase padre","Al método main","A una variable global"]],
+
+[7,"¿Qué es un objeto?","",["Una instancia de una clase","Un tipo de dato primitivo","Un bucle","Un método sin parámetros"]],
+[7,"¿Qué palabra se usa para crear un objeto?","",["new","class","create","this"]],
+[7,"¿Qué es a en esta línea?","Alumno a = new Alumno();",["Una variable que referencia a un objeto Alumno","Una clase","Un método","Un constructor"]],
+[7,"¿Cómo se llama al método estudiar del objeto a?","",["a.estudiar();","estudiar.a();","a->estudiar;","Alumno.a();"]],
+[7,"¿Se pueden crear varios objetos de la misma clase?","",["Sí, cada uno con sus propios valores","No, solo uno por clase","Sí, pero todos con los mismos valores","Solo si la clase es pública"]],
+[7,"Si Auto es la clase, ¿qué es miAuto?","Auto miAuto = new Auto();",["Un objeto","Una clase","Un atributo","Un método"]],
+[7,"¿Qué significa instanciar?","",["Crear un objeto a partir de una clase","Borrar un objeto","Declarar una variable int","Repetir un bloque de código"]],
+[7,"¿Qué valor tiene una variable de objeto que no apunta a ningún objeto?","",["null","0","false","\"\""]],
+[7,"¿Qué forma el estado de un objeto?","",["Los valores de sus atributos","Sus métodos","El nombre de la clase","El constructor"]],
+[7,"¿Qué forma el comportamiento de un objeto?","",["Sus métodos","Sus atributos","Su nombre","Su tipo de dato"]],
+
+[8,"¿Qué es el encapsulamiento?","",["Ocultar los datos internos y controlar el acceso con métodos","Crear muchos objetos","Repetir código","Heredar de otra clase"]],
+[8,"¿Qué modificador hace que un atributo solo se use dentro de su clase?","",["private","public","static","void"]],
+[8,"¿Qué modificador permite acceder desde cualquier clase?","",["public","private","final","return"]],
+[8,"¿Por qué se declaran private los atributos?","",["Para que no se modifiquen sin control desde afuera","Para que el programa sea más rápido","Para que no ocupen memoria","Porque Java lo obliga"]],
+[8,"Si saldo es private, ¿se puede hacer esto desde otra clase?","cuenta.saldo = 100;",["No, da error de compilación","Sí, sin problema","Sí, pero solo una vez","Sí, si saldo es int"]],
+[8,"¿Cuál de estos es un modificador de acceso?","",["private","static","void","int"]],
+[8,"¿Cuál es un beneficio del encapsulamiento?","",["Poder validar los datos antes de guardarlos","Que no haga falta usar métodos","Que todos los atributos sean públicos","Evitar crear objetos"]],
+[8,"¿Cómo se accede a un atributo private desde otra clase?","",["Con métodos públicos, como getters y setters","Escribiendo objeto.atributo","Con la palabra new","No se puede de ninguna forma"]],
+[8,"¿Qué pilar de la POO consiste en proteger los datos internos de un objeto?","",["Encapsulamiento","Herencia","Polimorfismo","Iteración"]],
+[8,"En una clase bien encapsulada, ¿cómo suelen ser los atributos y los métodos?","",["Atributos private y métodos public","Atributos public y métodos private","Todo public","Todo private"]],
+
+[9,"¿Para qué sirve un getter?","",["Para obtener el valor de un atributo","Para cambiar el valor de un atributo","Para crear un objeto","Para borrar un atributo"]],
+[9,"¿Para qué sirve un setter?","",["Para asignar o cambiar el valor de un atributo","Para leer el valor de un atributo","Para crear una clase","Para repetir código"]],
+[9,"¿Cómo se llama el getter del atributo nombre?","",["getNombre()","setNombre()","nombre()","get.nombre()"]],
+[9,"¿Cuál es el setter correcto para el atributo edad?","",["setEdad(int edad)","getEdad(int edad)","setEdad()","edad(int e)"]],
+[9,"¿Qué tipo de retorno suele tener un setter?","",["void","int","boolean","String"]],
+[9,"¿Cómo se suele llamar el getter de un atributo boolean llamado activo?","",["isActivo()","setActivo()","activo()","hasActivo(boolean)"]],
+[9,"¿Qué pasa si se llama setEdad(-5)?","public void setEdad(int e) {\n  if (e >= 0) {\n    edad = e;\n  }\n}",["La edad no cambia","La edad pasa a ser -5","La edad pasa a ser 0","Da error de compilación"]],
+[9,"En un setter, ¿qué hace esta línea?","this.nombre = nombre;",["Guarda el parámetro en el atributo del objeto","Compara el atributo con el parámetro","Crea un objeto nuevo","Devuelve el nombre"]],
+[9,"¿Un getter normalmente recibe parámetros?","",["No","Sí, siempre uno","Sí, dos","Solo si es void"]],
+[9,"¿Qué se muestra en pantalla?","p.setPrecio(200);\nSystem.out.println(p.getPrecio());",["200","0","null","p"]]
+];
+
+const TEAM_COLORS=["#ff6b6b","#2ec4b6","#ffc933","#b18cff","#9bd65a","#4cb5ff","#ff9f43","#ff8fb1"];
+const LETTERS="ABCD";
+const LS_KEY="ruleta-p2-usadas";
+
+/* ================= UTILIDADES ================= */
+const $=s=>document.querySelector(s);
+const el=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e};
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function loadUsed(){try{return new Set(JSON.parse(localStorage.getItem(LS_KEY)||"[]"))}catch(e){return new Set()}}
+function saveUsed(s){try{localStorage.setItem(LS_KEY,JSON.stringify([...s]))}catch(e){}}
+
+/* ================= SONIDO ================= */
+let AC=null,muted=false,noiseBuf=null;
+function actx(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==="suspended")AC.resume();return AC}
+function tone(f,d,type="sine",v=.2,when=0){const a=actx();if(!a||muted)return;const t=a.currentTime+when;const o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(a.destination);o.start(t);o.stop(t+d+.05)}
+function noise(d,v=.3,when=0,freq=180){const a=actx();if(!a||muted)return;if(!noiseBuf){noiseBuf=a.createBuffer(1,a.sampleRate,a.sampleRate);const c=noiseBuf.getChannelData(0);for(let i=0;i<c.length;i++)c[i]=Math.random()*2-1}const t=a.currentTime+when;const s=a.createBufferSource();s.buffer=noiseBuf;const f=a.createBiquadFilter();f.type="bandpass";f.frequency.value=freq;f.Q.value=.8;const g=a.createGain();g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);s.connect(f).connect(g).connect(a.destination);s.start(t);s.stop(t+d+.05)}
+const SFX={
+  tick:()=>tone(1400,.04,"square",.06),
+  beep:()=>tone(990,.12,"square",.12),
+  alarm:()=>{for(let i=0;i<10;i++)tone(i%2?640:960,.17,"square",.2,i*.19)},
+  ok:()=>[523,659,784,1047].forEach((f,i)=>tone(f,.28,"triangle",.24,i*.09)),
+  bad:()=>{tone(196,.45,"sawtooth",.16);tone(147,.55,"sawtooth",.14,.12)},
+  whoosh:()=>noise(.35,.25,0,900),
+  drum:(sec)=>{let t=0,gap=.11;while(t<sec){noise(.09,.35,t,160);t+=gap;gap=Math.max(.045,gap*.97)}noise(1.2,.5,sec,2500);tone(110,.8,"sine",.35,sec)},
+  fanfare:()=>{[[523,0],[659,.14],[784,.28],[1047,.42],[784,.62],[1047,.76]].forEach(([f,w])=>tone(f,.3,"triangle",.25,w));[523,659,784,1047].forEach(f=>tone(f,1.4,"triangle",.14,.95))},
+  reveal:()=>[392,523,659].forEach((f,i)=>tone(f,.2,"triangle",.18,i*.12))
+};
+
+/* ================= CONFIGURACIÓN ================= */
+const cfg={teams:2,names:[],q:15,time:20,rebTime:20,pts:10,rebPts:10};
+function defaultChecks(n){const s=new Set([Math.round(n/3),Math.round(2*n/3),n-1].filter(x=>x>0&&x<n));return [...s].sort((a,b)=>a-b).join(", ")}
+function renderSetup(){
+  document.querySelectorAll(".stepper").forEach(s=>{s.querySelector("output").textContent=cfg[s.dataset.key]});
+  const box=$("#teamList");box.innerHTML="";
+  for(let i=0;i<cfg.teams;i++){
+    if(!cfg.names[i])cfg.names[i]="Equipo "+LETTERS.concat("EFGH")[i];
+    const r=el("div","team-row");const sw=el("span","swatch");sw.style.background=TEAM_COLORS[i];
+    const inp=el("input");inp.id="team"+i;inp.value=cfg.names[i];inp.maxLength=22;inp.setAttribute("aria-label","Nombre del equipo "+(i+1));
+    inp.addEventListener("input",()=>cfg.names[i]=inp.value);
+    r.append(sw,inp);box.append(r);
+  }
+  updatePoolInfo();
+}
+function updatePoolInfo(){
+  const used=loadUsed();const left=Q.length-[...used].filter(i=>i<Q.length).length;
+  $("#poolInfo").textContent=$("#noRepeat").checked?`Quedan ${left} de ${Q.length} preguntas sin usar.`:`Se sortea entre las ${Q.length} preguntas.`;
+}
+document.querySelectorAll(".stepper").forEach(s=>{
+  s.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const k=s.dataset.key;
+    const v=Math.min(+s.dataset.max,Math.max(+s.dataset.min,cfg[k]+(+b.dataset.d)*(+s.dataset.step)));
+    const was=cfg[k];cfg[k]=v;if(k==="q"&&$("#checks").value===defaultChecks(was))$("#checks").value=defaultChecks(v);renderSetup()});
+});
+$("#checks").value=defaultChecks(cfg.q);
+$("#noRepeat").addEventListener("change",updatePoolInfo);
+$("#resetUsed").addEventListener("click",()=>{saveUsed(new Set());updatePoolInfo();$("#resetUsed").textContent="Banco reiniciado";setTimeout(()=>$("#resetUsed").textContent="Reiniciar banco",1800)});
+$("#bankBtn").addEventListener("click",openBank);
+$("#bankClose").addEventListener("click",()=>$("#bank").hidden=true);
+$("#startBtn").addEventListener("click",startGame);
+
+function openBank(){
+  const used=loadUsed();const list=$("#bankList");list.innerHTML="";
+  TOPICS.forEach((t,ti)=>{
+    const sec=el("div","bank-topic");const h=el("h3",null,t.n);h.style.color=t.c;const ol=el("ol");
+    Q.forEach((q,id)=>{if(q[0]!==ti)return;const li=el("li");li.append(el("span",null,q[1]));
+      if(used.has(id))li.append(el("span","used-tag","usada"));
+      if(q[2]){const p=el("pre","code",q[2]);li.append(p)}
+      const a=el("div","ans","✓ "+q[3][0]);li.append(a);ol.append(li)});
+    sec.append(h,ol);list.append(sec);
+  });
+  $("#bank").hidden=false;$("#bank").scrollTop=0;
+}
+
+/* ================= JUEGO ================= */
+let G=null;
+function startGame(){
+  actx();
+  const checks=$("#checks").value.split(/[^0-9]+/).map(Number).filter(n=>n>0&&n<cfg.q);
+  G={
+    teams:cfg.names.slice(0,cfg.teams).map((n,i)=>({name:(n||"").trim()||"Equipo "+(i+1),color:TEAM_COLORS[i],score:0})),
+    active:[...Array(cfg.teams).keys()],turn:0,done:0,total:cfg.q,checks:new Set(checks),
+    used:$("#noRepeat").checked?loadUsed():new Set(),persist:$("#noRepeat").checked,
+    tiebreak:false,rot:G?G.rot:0,phase:"spin",cur:null,spinning:false
+  };
+  $("#setup").hidden=true;$("#game").hidden=false;
+  toSpin();
+}
+const curTeam=()=>G.teams[G.active[G.turn]];
+function topicAvail(t){return Q.some((q,id)=>q[0]===t&&!G.used.has(id))}
+
+function renderTop(){
+  const bar=$("#teamsBar");bar.innerHTML="";
+  const on=G.cur&&G.phase!=="spin"?G.cur.team:G.active[G.turn];
+  G.teams.forEach((t,i)=>{const p=el("div","tpill");p.style.setProperty("--tc",t.color);const d=el("i");d.style.background=t.color;p.append(d,el("span",null,t.name));
+    if(i===on)p.classList.add("on");if(!G.active.includes(i))p.classList.add("out");bar.append(p)});
+  const c=$("#counter");
+  if(G.tiebreak){c.textContent="Desempate";c.classList.add("tb")}
+  else{c.textContent=`Pregunta ${Math.min(G.done+1,G.total)} / ${G.total}`;c.classList.remove("tb")}
+}
+
+/* ---- Ruleta ---- */
+function drawWheel(){
+  const cv=$("#wheel");const s=cv.clientWidth;if(!s)return;const dpr=window.devicePixelRatio||1;
+  if(cv.width!==Math.round(s*dpr)){cv.width=cv.height=Math.round(s*dpr)}
+  const c=cv.getContext("2d");c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,s,s);
+  const r=s/2,seg=Math.PI*2/TOPICS.length,rot=G.rot;
+  c.beginPath();c.arc(r,r,r-2,0,Math.PI*2);c.fillStyle="#f6f2e9";c.fill();
+  TOPICS.forEach((t,i)=>{
+    const avail=topicAvail(i);
+    c.beginPath();c.moveTo(r,r);c.arc(r,r,r-10,rot+i*seg,rot+(i+1)*seg);c.closePath();
+    c.fillStyle=avail?t.c:"#4a5382";c.fill();c.lineWidth=3;c.strokeStyle="#111836";c.stroke();
+    c.save();c.translate(r,r);c.rotate(rot+(i+.5)*seg);c.textAlign="right";c.textBaseline="middle";
+    c.fillStyle=avail?"#141a33":"#8d94bb";c.font=`800 ${Math.max(11,r*.068)}px Rubik, system-ui, sans-serif`;
+    c.fillText(t.n.toUpperCase(),r-24,0);c.restore();
+  });
+  // pernos
+  for(let i=0;i<TOPICS.length;i++){const a=rot+i*seg;c.beginPath();c.arc(r+Math.cos(a)*(r-6),r+Math.sin(a)*(r-6),3.5,0,Math.PI*2);c.fillStyle="#111836";c.fill()}
+  c.beginPath();c.arc(r,r,r*.15,0,Math.PI*2);c.fillStyle="#111836";c.fill();
+  c.beginPath();c.arc(r,r,r*.1,0,Math.PI*2);c.fillStyle="#ffc933";c.fill();
+  c.fillStyle="#111836";c.font=`${r*.08}px Bungee, Impact, sans-serif`;c.textAlign="center";c.textBaseline="middle";c.fillText("P2",r,r+1);
+}
+window.addEventListener("resize",()=>{if(G&&!$("#wheelView").hidden)drawWheel()});
+function underPointer(rot){const seg=Math.PI*2/TOPICS.length;let a=(-Math.PI/2-rot)%(Math.PI*2);if(a<0)a+=Math.PI*2;return Math.floor(a/seg)}
+
+function toSpin(){
+  G.phase="spin";G.cur=null;
+  if(!TOPICS.some((t,i)=>topicAvail(i))){G.used=new Set();if(G.persist)saveUsed(G.used)}
+  $("#qView").hidden=true;$("#wheelView").hidden=false;
+  const t=curTeam();const tl=$("#turnLabel");tl.style.setProperty("--tc",t.color);
+  tl.innerHTML="";tl.append(document.createTextNode(G.tiebreak?"Desempate · gira":"Gira la ruleta"));const b=el("b",null,t.name);tl.append(b);
+  $("#topicBanner").textContent="";$("#spinBtn").disabled=false;
+  renderTop();requestAnimationFrame(drawWheel);
+}
+function spin(){
+  if(G.spinning||G.phase!=="spin")return;
+  const avail=TOPICS.map((t,i)=>i).filter(topicAvail);
+  const pick=avail[Math.floor(Math.random()*avail.length)];
+  const seg=Math.PI*2/TOPICS.length;
+  let target=-Math.PI/2-(pick+.5)*seg+(Math.random()-.5)*seg*.7;
+  while(target<G.rot+Math.PI*2*6)target+=Math.PI*2;
+  const from=G.rot,dur=matchMedia("(prefers-reduced-motion: reduce)").matches?600:4600,t0=performance.now();
+  G.spinning=true;$("#spinBtn").disabled=true;SFX.whoosh();
+  let last=underPointer(from);
+  (function step(now){
+    const p=Math.min(1,(now-t0)/dur),e=1-Math.pow(1-p,4);
+    G.rot=from+(target-from)*e;drawWheel();
+    const u=underPointer(G.rot);if(u!==last){last=u;SFX.tick()}
+    if(p<1)requestAnimationFrame(step);else{G.spinning=false;G.rot%=Math.PI*2;onSpinEnd(pick)}
+  })(t0);
+}
+$("#spinBtn").addEventListener("click",spin);
+function onSpinEnd(t){
+  const b=$("#topicBanner");b.style.setProperty("--tc",TOPICS[t].c);b.textContent=TOPICS[t].n;
+  b.style.animation="none";void b.offsetWidth;b.style.animation="";
+  SFX.reveal();
+  setTimeout(()=>loadQuestion(t),1400);
+}
+
+/* ---- Pregunta ---- */
+function loadQuestion(t){
+  const pool=Q.map((q,id)=>id).filter(id=>Q[id][0]===t&&!G.used.has(id));
+  const id=pool[Math.floor(Math.random()*pool.length)];
+  G.used.add(id);if(G.persist){const s=loadUsed();s.add(id);saveUsed(s)}
+  const q=Q[id];
+  G.cur={id,topic:t,opts:shuffle(q[3].map((x,j)=>({t:x,ok:j===0}))),wrong:new Set(),team:G.active[G.turn],rebound:false,tried:new Set([G.active[G.turn]])};
+  $("#wheelView").hidden=true;$("#qView").hidden=false;
+  const tag=$("#qTag");tag.textContent=TOPICS[t].n;tag.style.background=TOPICS[t].c;
+  $("#qText").textContent=q[1];
+  const code=$("#qCode");code.hidden=!q[2];code.textContent=q[2]||"";
+  setWho();setTimerView(cfg.time,cfg.time);
+  G.phase="ready";startAnswer();
+}
+function setWho(){const w=$("#qWho");const t=G.teams[G.cur.team];w.style.setProperty("--tc",t.color);w.textContent=(G.cur.rebound?"Rebote: ":"Responde: ")+t.name;w.classList.toggle("reb",G.cur.rebound);renderTop()}
+function renderOpts(){
+  const box=$("#opts");box.innerHTML="";
+  const live=G.phase==="answer";
+  G.cur.opts.forEach((o,k)=>{
+    const b=el("button","opt");b.type="button";b.dataset.k=k;
+    const l=el("span","l",LETTERS[k]),t=el("span","t",o.t);b.append(l,t);
+    if(G.cur.wrong.has(k))b.classList.add("wrong");
+    if(G.phase==="result"){if(o.ok)b.classList.add("right");else if(!G.cur.wrong.has(k))b.classList.add("dim")}
+    if(live&&!G.cur.wrong.has(k))b.classList.add("live");
+    b.addEventListener("click",()=>choose(k));box.append(b);
+  });
+}
+function ctrl(...nodes){const c=$("#ctrl");c.innerHTML="";nodes.forEach(n=>c.append(n))}
+function btn(txt,cls,fn){const b=el("button","btn "+(cls||""),txt);b.type="button";b.addEventListener("click",fn);return b}
+
+function toReady(){
+  G.phase="ready";renderOpts();
+  const secs=G.cur.rebound?cfg.rebTime:cfg.time;
+  G.primary=startAnswer;
+  ctrl(btn(`▶ Empezar ${secs} segundos`,"primary big",startAnswer), btn("Saltear pregunta","",skipQuestion));
+}
+function startAnswer(){
+  if(G.phase!=="ready")return;
+  G.phase="answer";renderOpts();
+  const secs=G.cur.rebound?cfg.rebTime:cfg.time;
+  G.primary=null;
+  ctrl(el("span","msg","Tocá la opción que elige el equipo"),btn("⏸ Pausa","",togglePause),btn("No contestan","",()=>{stopTimer();timeUp(false)}),...(G.cur.rebound?[]:[btn("Saltear pregunta","small",skipQuestion)]));
+  startTimer(secs,()=>timeUp(true));
+}
+function skipQuestion(){stopTimer();toSpin()}
+
+/* ---- Temporizador ---- */
+let TM=null;
+function setTimerView(left,total){
+  const f=Math.max(0,left/total);$("#tBar").style.strokeDashoffset=(326.73*(1-f)).toFixed(2);
+  $("#tNum").textContent=Math.ceil(left);$("#timer").classList.toggle("warn",left<=5&&left>0);
+}
+function startTimer(sec,onEnd){
+  stopTimer();TM={left:sec,total:sec,onEnd,last:performance.now(),paused:false,lastSec:Math.ceil(sec)};
+  $("#timer").classList.remove("paused");
+  const loop=now=>{if(!TM)return;if(!TM.paused){TM.left-=(now-TM.last)/1000}TM.last=now;
+    const s=Math.ceil(TM.left);if(s!==TM.lastSec){TM.lastSec=s;if(s<=5&&s>0)SFX.beep()}
+    setTimerView(Math.max(0,TM.left),TM.total);
+    if(TM.left<=0){const cb=TM.onEnd;TM=null;cb();return}
+    TM.raf=requestAnimationFrame(loop)};
+  TM.raf=requestAnimationFrame(loop);
+}
+function stopTimer(){if(TM){cancelAnimationFrame(TM.raf);TM=null}$("#timer").classList.remove("paused")}
+function togglePause(){if(!TM)return;TM.paused=!TM.paused;$("#timer").classList.toggle("paused",TM.paused);
+  const b=[...$("#ctrl").querySelectorAll("button")].find(x=>x.textContent.includes("Pausa")||x.textContent.includes("Seguir"));if(b)b.textContent=TM.paused?"▶ Seguir":"⏸ Pausa"}
+
+/* ---- Respuestas ---- */
+function choose(k){
+  if(G.phase!=="answer"||G.cur.wrong.has(k))return;
+  stopTimer();
+  if(G.cur.opts[k].ok){
+    const pts=G.cur.rebound?cfg.rebPts:cfg.pts;G.teams[G.cur.team].score+=pts;
+    SFX.ok();showResult(`¡Correcto! +${pts} para ${G.teams[G.cur.team].name}`,"good");
+  }else{
+    G.cur.wrong.add(k);SFX.bad();afterMiss("Incorrecto");
+  }
+}
+function timeUp(alarm){if(alarm)SFX.alarm();afterMiss(alarm?"¡Se acabó el tiempo!":"No contestaron")}
+function afterMiss(why){
+  const others=G.active.filter(i=>!G.cur.tried.has(i));
+  if(!G.cur.rebound&&others.length){toRebound(why,others)}
+  else showResult(`${why}. Nadie suma puntos en esta pregunta.`,"bad");
+}
+function toRebound(why,others){
+  G.phase="rebChoose";renderOpts();
+  const wrap=el("div","reb-teams");
+  const next=others.find(i=>G.active.indexOf(i)>G.turn)??others[0];
+  const order=[next,...others.filter(i=>i!==next)];
+  order.forEach(i=>{const t=G.teams[i];const b=btn(t.name,i===next?"big":"",()=>startRebound(i));b.style.setProperty("--tc",t.color);wrap.append(b)});
+  G.primary=()=>startRebound(next);
+  ctrl(el("span","msg bad",`${why} · ¡Rebote! ¿Qué equipo contesta?`),wrap,btn("Nadie, mostrar respuesta","small",()=>showResult("Nadie suma puntos en esta pregunta.","bad")));
+}
+function startRebound(i){
+  if(G.phase!=="rebChoose")return;
+  G.cur.team=i;G.cur.rebound=true;G.cur.tried.add(i);setWho();setTimerView(cfg.rebTime,cfg.rebTime);
+  G.phase="ready";startAnswer();
+}
+function showResult(text,kind){
+  G.phase="result";renderOpts();
+  const last=!G.tiebreak&&G.done+1>=G.total;
+  const check=!G.tiebreak&&!last&&G.checks.has(G.done+1);
+  const label=G.tiebreak?"Continuar":last?"🏆 Ver quién ganó":check?"Ver puntajes":"Siguiente pregunta →";
+  G.primary=next;
+  ctrl(el("span","msg "+kind,text),btn(label,"primary big",next));
+}
+function next(){
+  if(G.phase!=="result")return;
+  G.done++;G.phase="between";
+  if(G.tiebreak){
+    const tied=topTied();if(tied.length>1){G.active=tied;G.turn=(G.turn+1)%G.active.length;toSpin()}else showFinal();return;
+  }
+  if(G.done>=G.total){showFinal();return}
+  G.turn=(G.turn+1)%G.active.length;
+  if(G.checks.has(G.done)){showScores(()=>toSpin())}else toSpin();
+}
+function topTied(){const pool=G.tiebreak?G.active:G.teams.map((t,i)=>i);const max=Math.max(...pool.map(i=>G.teams[i].score));return pool.filter(i=>G.teams[i].score===max)}
+
+/* ---- Puntajes parciales ---- */
+function showScores(cb){
+  const lastOne=G.done===G.total-1;
+  $("#scoresSub").textContent=lastOne?`Queda una sola pregunta`:`Después de ${G.done} de ${G.total} preguntas`;
+  $("#scoresTitle").textContent=lastOne?"Antes de la última…":"Así van los puntajes";
+  const board=$("#board");board.innerHTML="";
+  const order=G.teams.map((t,i)=>i).sort((a,b)=>G.teams[b].score-G.teams[a].score);
+  const max=Math.max(1,...G.teams.map(t=>t.score));
+  const fills=[];
+  order.forEach(i=>{const t=G.teams[i];const r=el("div","bar-row");const n=el("div","n",t.name);n.style.color=t.color;
+    const tr=el("div","bar-track"),f=el("div","bar-fill");f.style.background=t.color;tr.append(f);
+    const s=el("div","s","0");r.append(n,tr,s);board.append(r);fills.push([f,s,t.score/max,t.score])});
+  $("#scores").hidden=false;SFX.reveal();
+  requestAnimationFrame(()=>requestAnimationFrame(()=>fills.forEach(([f,s,p,v])=>{f.style.width=(p*100)+"%";countUp(s,v,1400)})));
+  $("#scoresGo").onclick=()=>{$("#scores").hidden=true;cb()};
+  G.primary=()=>$("#scoresGo").click();
+}
+function countUp(node,to,ms){const t0=performance.now();(function f(n){const p=Math.min(1,(n-t0)/ms);node.textContent=Math.round(to*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(f)})(t0)}
+
+/* ---- Final ---- */
+function showFinal(){
+  G.phase="final";G.primary=null;stopTimer();
+  const card=$("#finalCard");card.innerHTML="";
+  card.append(el("p","sub",G.tiebreak?"Después del desempate…":`Terminaron las ${G.total} preguntas`),el("div","suspense","Y el equipo ganador es…"));
+  $("#final").hidden=false;SFX.drum(3);
+  setTimeout(revealWinner,3100);
+}
+function revealWinner(){
+  const all=G.teams.map((t,i)=>i);const max=Math.max(...all.map(i=>G.teams[i].score));
+  const tied=all.filter(i=>G.teams[i].score===max);
+  const card=$("#finalCard");card.innerHTML="";
+  if(tied.length===1){
+    const w=G.teams[tied[0]];
+    card.append(trophy(w.color));const h=el("div","winner",w.name);h.style.setProperty("--tc",w.color);card.append(h);
+    card.append(el("p","sub",`¡Campeones con ${w.score} puntos!`));
+    SFX.fanfare();confetti([w.color,"#ffc933","#f6f2e9"]);
+  }else{
+    const h=el("h2",null,"¡Empate!");card.append(h);
+    const names=el("div","winner",tied.map(i=>G.teams[i].name).join(" · "));names.style.setProperty("--tc","#ffc933");names.style.fontSize="clamp(2rem,7vw,4.5rem)";card.append(names);
+    card.append(el("p","sub",`${tied.length} equipos con ${max} puntos`));
+    SFX.reveal();
+  }
+  card.append(ranking());
+  const acts=el("div","layer-actions");
+  if(tied.length>1){
+    acts.append(btn("Pregunta de desempate","primary big",()=>{$("#final").hidden=true;G.tiebreak=true;G.active=tied;G.turn=0;toSpin()}));
+    acts.append(btn("Ganan todos los empatados","",()=>{SFX.fanfare();confetti(tied.map(i=>G.teams[i].color).concat("#ffc933"))}));
+  }
+  acts.append(btn("Nueva partida",tied.length>1?"":"primary big",newGame));
+  card.append(acts);
+}
+function ranking(){const ol=el("ol","rank");G.teams.map((t,i)=>i).sort((a,b)=>G.teams[b].score-G.teams[a].score).forEach((i,p)=>{const t=G.teams[i];const li=el("li");const a=el("span",null,`${p+1}. ${t.name}`);a.style.color=t.color;li.append(a,el("span",null,t.score));ol.append(li)});return ol}
+function trophy(color){const d=document.createElement("div");d.innerHTML=`<svg class="trophy" viewBox="0 0 100 100" aria-hidden="true"><path d="M28 14h44v20c0 14-10 26-22 26S28 48 28 34z" fill="#ffc933"/><path d="M28 20H14c0 14 6 22 16 22M72 20h14c0 14-6 22-16 22" fill="none" stroke="#ffc933" stroke-width="6"/><rect x="44" y="58" width="12" height="14" fill="#e0a800"/><rect x="30" y="72" width="40" height="12" rx="3" fill="${color}"/><text x="50" y="42" text-anchor="middle" font-family="Bungee, Impact, sans-serif" font-size="18" fill="#6b4d00">1</text></svg>`;return d.firstChild}
+function newGame(){stopConfetti();$("#final").hidden=true;$("#game").hidden=true;$("#setup").hidden=false;G.phase="setup";updatePoolInfo()}
+
+/* ---- Confeti ---- */
+let CF=null;
+function confetti(colors){
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  stopConfetti();const cv=$("#confetti");cv.hidden=false;const dpr=window.devicePixelRatio||1;
+  const W=innerWidth,H=innerHeight;cv.width=W*dpr;cv.height=H*dpr;const c=cv.getContext("2d");c.setTransform(dpr,0,0,dpr,0,0);
+  const P=Array.from({length:220},()=>({x:Math.random()*W,y:-20-Math.random()*H*.8,vx:(Math.random()-.5)*3,vy:2+Math.random()*4,s:6+Math.random()*8,r:Math.random()*6,vr:(Math.random()-.5)*.3,c:colors[Math.floor(Math.random()*colors.length)]}));
+  const t0=performance.now();
+  CF=requestAnimationFrame(function f(now){c.clearRect(0,0,W,H);
+    P.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.03;p.r+=p.vr;c.save();c.translate(p.x,p.y);c.rotate(p.r);c.fillStyle=p.c;c.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);c.restore()});
+    if(now-t0<7000)CF=requestAnimationFrame(f);else stopConfetti()});
+}
+function stopConfetti(){if(CF)cancelAnimationFrame(CF);CF=null;const cv=$("#confetti");cv.hidden=true}
+
+/* ---- Barra superior ---- */
+$("#muteBtn").addEventListener("click",()=>{muted=!muted;$("#muteBtn").textContent=muted?"🔇":"🔊"});
+$("#fsBtn").addEventListener("click",()=>{try{if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen().catch(()=>{})}catch(e){}});
+let quitArm=null;
+$("#quitBtn").addEventListener("click",()=>{const b=$("#quitBtn");
+  if(quitArm){clearTimeout(quitArm);quitArm=null;b.textContent="Salir";stopTimer();newGame();return}
+  b.textContent="¿Seguro? Tocá de nuevo";quitArm=setTimeout(()=>{quitArm=null;b.textContent="Salir"},3000)});
+
+/* ---- Teclado ---- */
+document.addEventListener("keydown",e=>{
+  if(!G||$("#game").hidden||e.target.tagName==="INPUT")return;
+  if(e.code==="Space"||e.key==="Enter"){
+    if(document.activeElement&&document.activeElement.tagName==="BUTTON"&&e.key==="Enter")return;
+    e.preventDefault();
+    if(G.phase==="spin")spin();else if(G.primary)G.primary();return;
+  }
+  const k="abcd".indexOf(e.key.toLowerCase());const n="1234".indexOf(e.key);
+  if(G.phase==="answer"&&(k>=0||n>=0)){choose(k>=0?k:n);return}
+  if(e.key.toLowerCase()==="p"&&G.phase==="answer")togglePause();
+});
+
+renderSetup();
+</script>
+</body>
+</html>
